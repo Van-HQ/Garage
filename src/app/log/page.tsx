@@ -118,7 +118,7 @@ export default function LogPage() {
           <button
             key={v.id}
             onClick={() => setVehicleId(v.id)}
-            className="flex-1 glass-panel rounded-2xl py-3 text-sm font-medium transition-all"
+            className="flex-1 min-w-0 glass-panel rounded-2xl py-3 text-sm font-medium transition-all truncate"
             style={{
               borderColor: v.id === vehicleId ? "var(--accent)" : undefined,
               color: v.id === vehicleId ? "var(--accent)" : "var(--foreground)",
@@ -139,7 +139,7 @@ export default function LogPage() {
           <button
             key={key}
             onClick={() => setMode(key)}
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-medium transition-all"
+            className="flex-1 min-w-0 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-medium transition-all"
             style={{
               background: mode === key ? "var(--accent)" : "transparent",
               color: mode === key ? "var(--accent-foreground)" : "var(--muted)",
@@ -158,7 +158,7 @@ export default function LogPage() {
             <select
               value={typeId}
               onChange={(e) => setTypeId(e.target.value)}
-              className="glass-input rounded-2xl px-4 py-3 text-sm outline-none"
+              className="glass-input w-full min-w-0 rounded-2xl px-4 py-3 text-sm outline-none"
             >
               {vehicleTypes.length === 0 && <option value="">No types yet — add in Settings</option>}
               {vehicleTypes.map((t) => (
@@ -178,7 +178,7 @@ export default function LogPage() {
             inputMode="numeric"
             value={mileage}
             onChange={(e) => setMileage(e.target.value)}
-            className="glass-input rounded-2xl px-4 py-3 text-sm outline-none"
+            className="glass-input w-full min-w-0 rounded-2xl px-4 py-3 text-sm outline-none"
           />
         </label>
 
@@ -189,7 +189,7 @@ export default function LogPage() {
             required
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="glass-input rounded-2xl px-4 py-3 text-sm outline-none"
+            className="glass-input w-full min-w-0 rounded-2xl px-4 py-3 text-sm outline-none"
           />
         </label>
 
@@ -201,7 +201,7 @@ export default function LogPage() {
               inputMode="decimal"
               value={cost}
               onChange={(e) => setCost(e.target.value)}
-              className="glass-input rounded-2xl px-4 py-3 text-sm outline-none"
+              className="glass-input w-full min-w-0 rounded-2xl px-4 py-3 text-sm outline-none"
             />
           </label>
         )}
@@ -213,7 +213,7 @@ export default function LogPage() {
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
             placeholder="Synthetic 5W-30, rotated tires too..."
-            className="glass-input rounded-2xl px-4 py-3 text-sm outline-none resize-none"
+            className="glass-input w-full min-w-0 rounded-2xl px-4 py-3 text-sm outline-none resize-none"
           />
         </label>
 

@@ -194,7 +194,7 @@ function VehicleForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
             key={value}
             type="button"
             onClick={() => setIcon(value)}
-            className="flex-1 glass-input rounded-2xl py-3 flex items-center justify-center"
+            className="flex-1 min-w-0 glass-input rounded-2xl py-3 flex items-center justify-center"
             style={{ borderColor: icon === value ? color : undefined, color: icon === value ? color : "var(--muted)" }}
           >
             <Icon className="w-5 h-5" strokeWidth={1.75} />
@@ -215,12 +215,12 @@ function VehicleForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
       </div>
 
       <Field label="Nickname" value={name} onChange={setName} placeholder="Tacoma" required />
-      <div className="flex gap-3">
+      <div className="flex gap-3 min-w-0">
         <Field label="Year" value={String(year)} onChange={(v) => setYear(Number(v) || year)} type="number" />
         <Field label="Make" value={make} onChange={setMake} />
       </div>
       <Field label="Model" value={model} onChange={setModel} placeholder="Tacoma TRD Off-Road" />
-      <div className="flex gap-3">
+      <div className="flex gap-3 min-w-0">
         <Field label="Current mileage" value={mileage} onChange={setMileage} type="number" />
         <Field label="Avg mi/day" value={avgDaily} onChange={setAvgDaily} type="number" />
       </div>
@@ -296,14 +296,14 @@ function TypeForm({
 
       <Field label="Name" value={name} onChange={setName} placeholder="Oil Change" />
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 min-w-0">
         <Field label="Every (mi)" value={intervalMiles} onChange={setIntervalMiles} type="number" placeholder="5000" />
         <Field label="Every (days)" value={intervalDays} onChange={setIntervalDays} type="number" placeholder="180" />
       </div>
 
       <label className="flex flex-col gap-2">
         <span className="text-xs font-medium text-muted uppercase tracking-wide">Applies to</span>
-        <select value={scope} onChange={(e) => setScope(e.target.value)} className="glass-input rounded-2xl px-4 py-3 text-sm outline-none">
+        <select value={scope} onChange={(e) => setScope(e.target.value)} className="glass-input w-full min-w-0 rounded-2xl px-4 py-3 text-sm outline-none">
           <option value="">All vehicles</option>
           {vehicles.map((v) => (
             <option key={v.id} value={v.id}>
@@ -337,7 +337,7 @@ function Field({
   required?: boolean;
 }) {
   return (
-    <label className="flex flex-col gap-2 flex-1">
+    <label className="flex flex-col gap-2 flex-1 min-w-0">
       <span className="text-xs font-medium text-muted uppercase tracking-wide">{label}</span>
       <input
         type={type}
@@ -345,7 +345,7 @@ function Field({
         required={required}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="glass-input rounded-2xl px-4 py-3 text-sm outline-none"
+        className="glass-input w-full rounded-2xl px-4 py-3 text-sm outline-none min-w-0"
       />
     </label>
   );

@@ -56,7 +56,7 @@ export default function MaintenancePage() {
             <button
               key={v.id}
               onClick={() => setVehicleId(v.id)}
-              className="flex-1 glass-panel rounded-2xl py-3 text-sm font-medium"
+              className="flex-1 min-w-0 glass-panel rounded-2xl py-3 text-sm font-medium truncate"
               style={{
                 color: v.id === vehicleId ? "var(--accent)" : "var(--foreground)",
                 opacity: v.id === vehicleId ? 1 : 0.65,
