@@ -1,26 +1,118 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f2f2f5;
+  --background-elevated: #ffffff;
+  --foreground: #15161a;
+  --muted: #6b6d76;
+  --accent: #ff6a3d;
+  --accent-foreground: #ffffff;
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-highlight: rgba(255, 255, 255, 0.9);
+  --glass-shadow: 0 8px 32px rgba(20, 20, 30, 0.10), 0 1px 1px rgba(20, 20, 30, 0.04);
+  --status-ok: #34c759;
+  --status-soon: #ff9f0a;
+  --status-overdue: #ff453a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-sf);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #1a1b1e;
+    --background-elevated: #2b2927;
+    --foreground: #f5f4f2;
+    --muted: #9c9791;
+    --accent: #e6d3c1;
+    --accent-foreground: #1a1b1e;
+    --glass-bg: rgba(43, 41, 39, 0.55);
+    --glass-border: rgba(59, 56, 53, 0.85);
+    --glass-highlight: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 1px 1px rgba(0, 0, 0, 0.2);
+    --status-ok: #5bd27d;
+    --status-soon: #f5b14d;
+    --status-overdue: #ff5a52;
   }
 }
 
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
 body {
-  background: var(--background);
+  height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 15% -10%, color-mix(in srgb, var(--accent) 18%, transparent), transparent),
+    radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent),
+    var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", var(--font-sf), "Inter", system-ui, sans-serif;
+  overscroll-behavior-y: none;
+  min-height: 100dvh;
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+.text-accent {
+  color: var(--accent);
+}
+
+/* Core liquid-glass surface */
+.glass-panel {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+}
+
+.glass-input {
+  background: color-mix(in srgb, var(--background-elevated) 60%, transparent);
+  border: 1px solid var(--glass-border);
+}
+
+.glass-pill {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: var(--glass-shadow);
+}
+
+.btn-accent {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 100%, white 6%), var(--accent));
+  color: var(--accent-foreground);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.btn-accent:active {
+  transform: scale(0.98);
+}
+
+.card-surface {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--background-elevated) 92%, transparent), color-mix(in srgb, var(--background-elevated) 70%, transparent));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
