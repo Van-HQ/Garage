@@ -1,18 +1,4 @@
-"use client";
-
-import { useId } from "react";
-
 export default function VehicleGlyph({ icon, className }: { icon: string; className?: string }) {
-  const gridId = `vg-grid-${useId()}`;
-
-  const grid = (
-    <defs>
-      <pattern id={gridId} width="14" height="14" patternUnits="userSpaceOnUse">
-        <circle cx="1" cy="1" r="1" fill="currentColor" fillOpacity="0.35" />
-      </pattern>
-    </defs>
-  );
-
   const corners = (
     <g stroke="currentColor" strokeWidth="2" strokeOpacity="0.55" strokeLinecap="round">
       <path d="M4,16 L4,4 L16,4" fill="none" />
@@ -58,8 +44,6 @@ export default function VehicleGlyph({ icon, className }: { icon: string; classN
   if (icon === "car") {
     return (
       <svg viewBox="0 0 240 120" fill="none" className={className}>
-        {grid}
-        <rect x="4" y="4" width="232" height="112" fill={`url(#${gridId})`} />
         {corners}
         {datum}
         <path
@@ -80,8 +64,6 @@ export default function VehicleGlyph({ icon, className }: { icon: string; classN
 
   return (
     <svg viewBox="0 0 240 120" fill="none" className={className}>
-      {grid}
-      <rect x="4" y="4" width="232" height="112" fill={`url(#${gridId})`} />
       {corners}
       {datum}
       <path

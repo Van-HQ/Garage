@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, Trash2, Car, Truck, LogOut, X } from "lucide-react";
+import { Loader2, Plus, Trash2, Car, Truck, LogOut, X, FileText, Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useGarageData } from "@/lib/useGarageData";
-import { MAINTENANCE_CATEGORIES } from "@/lib/types";
+import { MAINTENANCE_CATEGORIES, MAINTENANCE_PRESETS } from "@/lib/types";
 
 const ICON_OPTIONS: { value: string; icon: typeof Car }[] = [
   { value: "truck", icon: Truck },
@@ -19,6 +19,10 @@ export default function SettingsPage() {
   const { vehicles, types, loading, refresh } = useGarageData();
   const [addingVehicle, setAddingVehicle] = useState(false);
   const [addingTypeFor, setAddingTypeFor] = useState<string | "all" | null>(null);
+  const [showPresets, setShowPresets] = useState(false);
+  const [manualBusyFor, setManualBusyFor] = useState<string | null>(null);
+  const manualInputRef = useRef<HTMLInputElement>(null);
+  const pendingManualVehicle = useRef<string | null>(null);
 
   async function signOut() {
     const supabase = createClient();
@@ -30,6 +34,72 @@ export default function SettingsPage() {
     const supabase = createClient();
     await supabase.from("vehicles").delete().eq("id", id);
     await refresh();
+  }
+
+  function pickManual(vehicleId: string) {
+    pendingManualVehicle.current = vehicleId;
+    manualInputRef.current?.click();
+  }
+
+  async function handleManualFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    const vehicleId = pendingManualVehicle.current;
+    e.target.value = "";
+    if (!file || !vehicleId) return;
+
+    setManualBusyFor(vehicleId);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setManualBusyFor(null);
+      return;
+    }
+
+    const path = `${user.id}/${vehicleId}.pdf`;
+    const { error: uploadError } = await supabase.storage
+      .from("manuals")
+      .upload(path, file, { upsert: true, contentType: "application/pdf" });
+
+    if (!uploadError) {
+      await supabase.from("vehicles").update({ manual_uploaded_at: new Date().toISOString() }).eq("id", vehicleId);
+      await refresh();
+    }
+    setManualBusyFor(null);
+  }
+
+  async function viewManual(vehicleId: string) {
+    setManualBusyFor(vehicleId);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setManualBusyFor(null);
+      return;
+    }
+    const path = `${user.id}/${vehicleId}.pdf`;
+    const { data } = await supabase.storage.from("manuals").createSignedUrl(path, 60 * 60);
+    setManualBusyFor(null);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+  }
+
+  async function deleteManual(vehicleId: string) {
+    setManualBusyFor(vehicleId);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setManualBusyFor(null);
+      return;
+    }
+    const path = `${user.id}/${vehicleId}.pdf`;
+    await supabase.storage.from("manuals").remove([path]);
+    await supabase.from("vehicles").update({ manual_uploaded_at: null }).eq("id", vehicleId);
+    await refresh();
+    setManualBusyFor(null);
   }
 
   async function deleteType(id: string) {
@@ -67,6 +137,14 @@ export default function SettingsPage() {
           </button>
         </div>
 
+        <input
+          ref={manualInputRef}
+          type="file"
+          accept="application/pdf"
+          className="hidden"
+          onChange={handleManualFile}
+        />
+
         <div className="flex flex-col gap-2.5">
           {vehicles.map((v) => (
             <div key={v.id} className="glass-panel rounded-3xl px-4 py-3.5 flex items-center gap-3.5">
@@ -78,7 +156,32 @@ export default function SettingsPage() {
                   {v.current_mileage.toLocaleString()} mi · ~{v.avg_daily_miles} mi/day
                 </p>
               </div>
-              <button onClick={() => deleteVehicle(v.id)} className="text-muted p-2">
+
+              {manualBusyFor === v.id ? (
+                <div className="p-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-muted" />
+                </div>
+              ) : v.manual_uploaded_at ? (
+                <div className="flex items-center gap-1 shrink-0">
+                  <button onClick={() => viewManual(v.id)} className="text-accent p-2" aria-label="View manual" title="View manual">
+                    <FileText className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => deleteManual(v.id)} className="text-muted p-2" aria-label="Remove manual" title="Remove manual">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => pickManual(v.id)}
+                  className="text-muted p-2 shrink-0"
+                  aria-label="Add owner's manual"
+                  title="Add owner's manual"
+                >
+                  <Upload className="w-4 h-4" />
+                </button>
+              )}
+
+              <button onClick={() => deleteVehicle(v.id)} className="text-muted p-2 shrink-0">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
@@ -100,13 +203,22 @@ export default function SettingsPage() {
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-sm font-semibold text-muted">Maintenance types</h3>
-          <button
-            onClick={() => setAddingTypeFor("all")}
-            className="text-sm font-medium text-accent flex items-center gap-1"
-            disabled={vehicles.length === 0}
-          >
-            <Plus className="w-4 h-4" /> Add
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowPresets(true)}
+              className="text-sm font-medium text-accent"
+              disabled={vehicles.length === 0}
+            >
+              Quick add
+            </button>
+            <button
+              onClick={() => setAddingTypeFor("all")}
+              className="text-sm font-medium text-accent flex items-center gap-1"
+              disabled={vehicles.length === 0}
+            >
+              <Plus className="w-4 h-4" /> Add
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-col gap-2.5">
@@ -136,6 +248,17 @@ export default function SettingsPage() {
             onClose={() => setAddingTypeFor(null)}
             onSaved={async () => {
               setAddingTypeFor(null);
+              await refresh();
+            }}
+          />
+        )}
+
+        {showPresets && (
+          <PresetPicker
+            vehicles={vehicles}
+            onClose={() => setShowPresets(false)}
+            onSaved={async () => {
+              setShowPresets(false);
               await refresh();
             }}
           />
@@ -230,6 +353,120 @@ function VehicleForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
         Save vehicle
       </button>
     </form>
+  );
+}
+
+function PresetPicker({
+  vehicles,
+  onClose,
+  onSaved,
+}: {
+  vehicles: { id: string; name: string }[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [selected, setSelected] = useState<Set<string>>(new Set(MAINTENANCE_PRESETS.map((p) => p.name)));
+  const [scope, setScope] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+
+  function toggle(name: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }
+
+  async function save() {
+    if (selected.size === 0) return;
+    setSaving(true);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const rows = MAINTENANCE_PRESETS.filter((p) => selected.has(p.name)).map((p) => ({
+      user_id: user.id,
+      vehicle_id: scope || null,
+      name: p.name,
+      category: p.category,
+      icon: p.icon,
+      interval_miles: p.interval_miles,
+      interval_days: p.interval_days,
+    }));
+
+    await supabase.from("maintenance_types").insert(rows);
+    setSaving(false);
+    onSaved();
+  }
+
+  return (
+    <div className="glass-panel rounded-3xl p-5 flex flex-col gap-3.5 mt-1">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold">Quick add common services</p>
+        <button type="button" onClick={onClose} className="text-muted">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      <p className="text-xs text-muted -mt-2">
+        General guidelines to start from — check each vehicle&apos;s owner&apos;s manual for exact intervals, then edit or delete any of these later.
+      </p>
+
+      <label className="flex flex-col gap-2">
+        <span className="text-xs font-medium text-muted uppercase tracking-wide">Applies to</span>
+        <select value={scope} onChange={(e) => setScope(e.target.value)} className="glass-input w-full min-w-0 rounded-2xl px-4 py-3 text-sm outline-none">
+          <option value="">All vehicles</option>
+          {vehicles.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.name}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <div className="flex flex-col gap-2">
+        {MAINTENANCE_PRESETS.map((p) => {
+          const checked = selected.has(p.name);
+          const detail = [
+            p.interval_miles ? `${p.interval_miles.toLocaleString()} mi` : null,
+            p.interval_days ? `${p.interval_days} days` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ");
+          return (
+            <button
+              key={p.name}
+              type="button"
+              onClick={() => toggle(p.name)}
+              className="glass-input w-full min-w-0 rounded-2xl px-4 py-3 flex items-center justify-between gap-3 text-left"
+              style={{ borderColor: checked ? "var(--accent)" : undefined }}
+            >
+              <span className="min-w-0">
+                <span className="block text-sm font-medium truncate">{p.name}</span>
+                <span className="block text-xs text-muted truncate">{detail}</span>
+              </span>
+              <span
+                className="w-5 h-5 rounded-full border shrink-0 flex items-center justify-center"
+                style={{ borderColor: checked ? "var(--accent)" : "var(--glass-border)", background: checked ? "var(--accent)" : "transparent" }}
+              >
+                {checked && <span className="w-2 h-2 rounded-full" style={{ background: "var(--accent-foreground)" }} />}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <button
+        onClick={save}
+        disabled={saving || selected.size === 0}
+        className="btn-accent rounded-2xl py-3 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60"
+      >
+        {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+        Add {selected.size} type{selected.size === 1 ? "" : "s"}
+      </button>
+    </div>
   );
 }
 

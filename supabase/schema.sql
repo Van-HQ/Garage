@@ -103,3 +103,20 @@ create trigger trg_bump_vehicle_mileage_maint
 create index if not exists idx_maintenance_logs_vehicle on maintenance_logs(vehicle_id, performed_at desc);
 create index if not exists idx_mileage_logs_vehicle on mileage_logs(vehicle_id, recorded_at desc);
 create index if not exists idx_maintenance_types_vehicle on maintenance_types(vehicle_id);
+
+-- ============ OWNER'S MANUAL (one PDF per vehicle, stored in Storage) ============
+-- Safe to run standalone even if the tables above already exist.
+
+alter table vehicles add column if not exists manual_uploaded_at timestamptz;
+
+insert into storage.buckets (id, name, public)
+values ('manuals', 'manuals', false)
+on conflict (id) do nothing;
+
+-- Files live at "<user_id>/<vehicle_id>.pdf" — these policies restrict
+-- every operation to files inside the caller's own user_id folder.
+drop policy if exists "manuals: users manage own files" on storage.objects;
+create policy "manuals: users manage own files" on storage.objects
+  for all
+  using (bucket_id = 'manuals' and auth.uid()::text = (storage.foldername(name))[1])
+  with check (bucket_id = 'manuals' and auth.uid()::text = (storage.foldername(name))[1]);
