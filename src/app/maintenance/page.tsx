@@ -108,15 +108,15 @@ export default function MaintenancePage() {
 
       <div className="flex flex-col gap-3">
         <h3 className="text-sm font-semibold text-muted px-1">Status</h3>
-        <div className="flex flex-col gap-2.5">
-          {status.length === 0 ? (
-            <div className="glass-panel rounded-3xl px-4 py-6 text-center text-sm text-muted">
-              No maintenance types set up yet. Add some in Settings.
-            </div>
-          ) : (
-            status.map((item) => vehicle && <StatusRow key={item.type.id} item={item} vehicleId={vehicle.id} />)
-          )}
-        </div>
+        {status.length === 0 ? (
+          <div className="glass-panel rounded-3xl px-4 py-6 text-center text-sm text-muted">
+            No maintenance types set up yet. Add some in Settings.
+          </div>
+        ) : (
+          <div className="list-panel">
+            {status.map((item) => vehicle && <StatusRow key={item.type.id} item={item} vehicleId={vehicle.id} />)}
+          </div>
+        )}
       </div>
 
       {cost && cost.total > 0 && (
@@ -128,19 +128,19 @@ export default function MaintenancePage() {
 
       <div className="flex flex-col gap-3">
         <h3 className="text-sm font-semibold text-muted px-1">History</h3>
-        <div className="flex flex-col gap-2.5">
-          {history.length === 0 ? (
-            <div className="glass-panel rounded-3xl px-4 py-6 text-center text-sm text-muted">
-              No entries logged yet.
-            </div>
-          ) : (
-            history.map((log) => {
+        {history.length === 0 ? (
+          <div className="glass-panel rounded-3xl px-4 py-6 text-center text-sm text-muted">
+            No entries logged yet.
+          </div>
+        ) : (
+          <div className="list-panel">
+            {history.map((log) => {
               const logPhotos = photos.filter((p) => p.maintenance_log_id === log.id);
               return (
-                <div key={log.id} className="glass-panel rounded-3xl px-4 py-3.5 flex flex-col gap-2.5">
+                <div key={log.id} className="list-row flex-col items-stretch gap-2.5">
                   <div className="flex items-center gap-3.5">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{log.title}</p>
+                      <p className="text-[15px] font-medium truncate">{log.title}</p>
                       <p className="text-xs text-muted truncate">
                         {new Date(log.performed_at).toLocaleDateString(undefined, {
                           month: "short",
@@ -152,7 +152,7 @@ export default function MaintenancePage() {
                       </p>
                       {log.notes && <p className="text-xs text-muted mt-1 truncate">{log.notes}</p>}
                     </div>
-                    <button onClick={() => deleteLog(log.id)} className="text-muted p-2 shrink-0" aria-label="Delete entry">
+                    <button onClick={() => deleteLog(log.id)} className="text-muted p-1.5 shrink-0" aria-label="Delete entry">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -172,9 +172,9 @@ export default function MaintenancePage() {
                   )}
                 </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
       </div>
     </main>
   );

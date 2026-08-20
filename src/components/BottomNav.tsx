@@ -17,30 +17,30 @@ export default function BottomNav() {
   if (pathname.startsWith("/login")) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-      <div className="glass-pill flex items-center gap-1 rounded-full px-2 py-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center px-3.5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="glass-pill flex items-center gap-1 rounded-full p-1.5">
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
             <Link
               key={href}
               href={href}
-              className="relative flex flex-col items-center justify-center gap-0.5 rounded-full px-4 py-2 min-w-[64px] transition-colors"
+              className="flex items-center justify-center h-[42px] rounded-full transition-all duration-200"
+              style={
+                active
+                  ? {
+                      width: "auto",
+                      padding: "0 16px 0 12px",
+                      gap: "7px",
+                      background: "var(--nav-active-bg)",
+                      color: "var(--nav-active-fg)",
+                      boxShadow: "0 1px 0 rgba(255,255,255,0.5) inset, 0 6px 14px -6px rgba(0,0,0,0.35)",
+                    }
+                  : { width: "42px", color: "var(--muted)" }
+              }
             >
-              {active && (
-                <span className="absolute inset-0 rounded-full bg-[var(--accent)]/15" aria-hidden />
-              )}
-              <Icon
-                className="relative w-5 h-5"
-                strokeWidth={active ? 2.25 : 1.75}
-                style={{ color: active ? "var(--accent)" : "var(--muted)" }}
-              />
-              <span
-                className="relative text-[10px] font-medium"
-                style={{ color: active ? "var(--accent)" : "var(--muted)" }}
-              >
-                {label}
-              </span>
+              <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={active ? 2.3 : 2} />
+              {active && <span className="text-sm font-bold whitespace-nowrap">{label}</span>}
             </Link>
           );
         })}

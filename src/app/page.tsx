@@ -46,18 +46,13 @@ export default function HomePage() {
   return (
     <main className="flex-1 px-5 pt-[max(1.5rem,env(safe-area-inset-top))] pb-40 flex flex-col gap-7">
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs font-medium tracking-[0.14em] uppercase text-muted">My Garage</p>
-          <h1 className="text-2xl font-semibold tracking-tight mt-0.5">
-            {index + 1} of {vehicles.length}
-          </h1>
-        </div>
+        <p className="text-sm font-semibold text-muted">My Garage</p>
         <Link
           href="/log"
-          className="glass-panel w-11 h-11 rounded-full flex items-center justify-center text-accent"
+          className="glass-panel w-9 h-9 rounded-full flex items-center justify-center text-foreground"
           aria-label="Log entry"
         >
-          <Plus className="w-5 h-5" strokeWidth={2} />
+          <Plus className="w-4 h-4" strokeWidth={2.3} />
         </Link>
       </div>
 
@@ -71,15 +66,17 @@ export default function HomePage() {
               View all
             </Link>
           </div>
-          <div className="flex flex-col gap-2.5">
-            {status.length === 0 ? (
-              <div className="glass-panel rounded-3xl px-4 py-6 text-center text-sm text-muted">
-                No maintenance items yet. Add some in Settings.
-              </div>
-            ) : (
-              status.map((item) => <StatusRow key={item.type.id} item={item} vehicleId={vehicle.id} />)
-            )}
-          </div>
+          {status.length === 0 ? (
+            <div className="glass-panel rounded-3xl px-4 py-6 text-center text-sm text-muted">
+              No maintenance items yet. Add some in Settings.
+            </div>
+          ) : (
+            <div className="list-panel">
+              {status.map((item) => (
+                <StatusRow key={item.type.id} item={item} vehicleId={vehicle.id} />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </main>

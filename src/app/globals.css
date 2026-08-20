@@ -14,6 +14,8 @@
   --status-ok: #34c759;
   --status-soon: #ff9f0a;
   --status-overdue: #ff453a;
+  --nav-active-bg: #211f1a;
+  --nav-active-fg: #f4f1ea;
 }
 
 @theme inline {
@@ -39,6 +41,8 @@
     --status-ok: #5bd27d;
     --status-soon: #f5b14d;
     --status-overdue: #ff5a52;
+    --nav-active-bg: #f1eee6;
+    --nav-active-fg: #1d1b17;
   }
 }
 
@@ -108,6 +112,27 @@ body {
   background: linear-gradient(160deg, color-mix(in srgb, var(--background-elevated) 92%, transparent), color-mix(in srgb, var(--background-elevated) 70%, transparent));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
+}
+
+/* Grouped list surface — solid background, hairline dividers between rows */
+.list-panel {
+  background: var(--background-elevated);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.list-row:last-child {
+  border-bottom: none;
 }
 
 ::-webkit-scrollbar {
