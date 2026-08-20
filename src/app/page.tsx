@@ -9,12 +9,15 @@ import { usePhotoUrls } from "@/lib/usePhotoUrls";
 import { MAINTENANCE_ICONS } from "@/lib/maintenance-icons";
 import VehicleSwiper from "@/components/VehicleSwiper";
 import StatusRow from "@/components/StatusRow";
+import EditEntryModal from "@/components/EditEntryModal";
 
 export default function HomePage() {
-  const { vehicles, types, logs, mileageLogs, photos, loading } = useGarageData();
+  const { vehicles, types, logs, mileageLogs, photos, loading, refresh } = useGarageData();
   const [index, setIndex] = useState(0);
   const vehicle = vehicles[index];
   const photoUrls = usePhotoUrls(photos);
+  const [editingLogId, setEditingLogId] = useState<string | null>(null);
+  const editingLog = useMemo(() => logs.find((l) => l.id === editingLogId) ?? null, [logs, editingLogId]);
 
   const status = useMemo(() => {
     if (!vehicle) return [];
@@ -104,7 +107,11 @@ export default function HomePage() {
               const thumbUrl = photo ? photoUrls[photo.storage_path] : undefined;
 
               return (
-                <Link key={log.id} href={`/log?edit=${log.id}`} className="list-row active:opacity-70">
+                <button
+                  key={log.id}
+                  onClick={() => setEditingLogId(log.id)}
+                  className="list-row w-full text-left active:opacity-70"
+                >
                   <div
                     className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                     style={{ background: "color-mix(in srgb, var(--status-ok) 15%, transparent)", color: "var(--status-ok)" }}
@@ -123,11 +130,21 @@ export default function HomePage() {
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img src={thumbUrl} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
                   )}
-                </Link>
+                </button>
               );
             })}
           </div>
         </div>
+      )}
+
+      {editingLog && (
+        <EditEntryModal
+          log={editingLog}
+          types={types}
+          photos={photos.filter((p) => p.maintenance_log_id === editingLog.id)}
+          onClose={() => setEditingLogId(null)}
+          onSaved={refresh}
+        />
       )}
     </main>
   );
