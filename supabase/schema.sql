@@ -78,8 +78,12 @@ alter table mileage_logs enable row level security;
 create policy "mileage_logs are owned by user" on mileage_logs
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
--- Keep vehicles.current_mileage in sync whenever a higher mileage is logged
-create or replace function bump_vehicle_mileage()
+-- Keep vehicles.current_mileage in sync whenever a higher mileage is logged.
+-- mileage_logs and maintenance_logs use different column names (mileage vs
+-- mileage_at, recorded_at vs performed_at), so each needs its own function —
+-- a single shared function referencing the wrong column name on either table
+-- throws "record new has no field ..." and silently rolls back the insert.
+create or replace function bump_vehicle_mileage_from_mileage_log()
 returns trigger as $$
 begin
   update vehicles
@@ -90,15 +94,28 @@ begin
 end;
 $$ language plpgsql security definer;
 
+create or replace function bump_vehicle_mileage_from_maintenance_log()
+returns trigger as $$
+begin
+  update vehicles
+    set current_mileage = greatest(current_mileage, new.mileage_at),
+        mileage_updated_at = new.performed_at
+    where id = new.vehicle_id and new.mileage_at >= current_mileage;
+  return new;
+end;
+$$ language plpgsql security definer;
+
 drop trigger if exists trg_bump_vehicle_mileage on mileage_logs;
 create trigger trg_bump_vehicle_mileage
   after insert on mileage_logs
-  for each row execute function bump_vehicle_mileage();
+  for each row execute function bump_vehicle_mileage_from_mileage_log();
 
 drop trigger if exists trg_bump_vehicle_mileage_maint on maintenance_logs;
 create trigger trg_bump_vehicle_mileage_maint
   after insert on maintenance_logs
-  for each row execute function bump_vehicle_mileage();
+  for each row execute function bump_vehicle_mileage_from_maintenance_log();
+
+drop function if exists bump_vehicle_mileage();
 
 create index if not exists idx_maintenance_logs_vehicle on maintenance_logs(vehicle_id, performed_at desc);
 create index if not exists idx_mileage_logs_vehicle on mileage_logs(vehicle_id, recorded_at desc);
