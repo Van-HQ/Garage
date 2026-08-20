@@ -117,7 +117,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="flex-1 px-5 pt-[max(1.5rem,env(safe-area-inset-top))] pb-40 flex flex-col gap-7">
+    <main className="flex-1 px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-40 flex flex-col gap-7">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-medium tracking-[0.14em] uppercase text-muted">Garage</p>
