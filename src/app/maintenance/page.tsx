@@ -5,6 +5,7 @@ import { Loader2, Trash2 } from "lucide-react";
 import { useGarageData } from "@/lib/useGarageData";
 import { computeMaintenanceStatus } from "@/lib/maintenance-status";
 import { computeCostBreakdown } from "@/lib/cost";
+import { usePhotoUrls } from "@/lib/usePhotoUrls";
 import { createClient } from "@/lib/supabase/client";
 import StatusRow from "@/components/StatusRow";
 import CostBreakdown from "@/components/CostBreakdown";
@@ -12,7 +13,7 @@ import CostBreakdown from "@/components/CostBreakdown";
 export default function MaintenancePage() {
   const { vehicles, types, logs, photos, loading, refresh } = useGarageData();
   const [vehicleId, setVehicleId] = useState("");
-  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+  const photoUrls = usePhotoUrls(photos);
 
   async function deleteLog(id: string) {
     const supabase = createClient();
@@ -24,29 +25,6 @@ export default function MaintenancePage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- default selection once data loads
     if (!vehicleId && vehicles.length > 0) setVehicleId(vehicles[0].id);
   }, [vehicles, vehicleId]);
-
-  useEffect(() => {
-    if (photos.length === 0) return;
-    let cancelled = false;
-    const supabase = createClient();
-    supabase.storage
-      .from("maintenance-photos")
-      .createSignedUrls(
-        photos.map((p) => p.storage_path),
-        3600
-      )
-      .then(({ data }) => {
-        if (cancelled || !data) return;
-        const map: Record<string, string> = {};
-        data.forEach((d, i) => {
-          if (d.signedUrl) map[photos[i].storage_path] = d.signedUrl;
-        });
-        setPhotoUrls(map);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [photos]);
 
   const vehicle = useMemo(() => vehicles.find((v) => v.id === vehicleId), [vehicles, vehicleId]);
 

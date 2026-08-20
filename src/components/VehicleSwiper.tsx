@@ -1,18 +1,20 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { MaintenanceLog, MaintenanceType, Vehicle } from "@/lib/types";
+import type { MaintenanceLog, MaintenanceType, MileageLog, Vehicle } from "@/lib/types";
 import VehicleCard from "@/components/VehicleCard";
 
 export default function VehicleSwiper({
   vehicles,
   types,
   logs,
+  mileageLogs,
   onIndexChange,
 }: {
   vehicles: Vehicle[];
   types: MaintenanceType[];
   logs: MaintenanceLog[];
+  mileageLogs: MileageLog[];
   onIndexChange?: (index: number) => void;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -44,7 +46,7 @@ export default function VehicleSwiper({
         className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar -mx-1"
       >
         {vehicles.map((v) => (
-          <VehicleCard key={v.id} vehicle={v} types={types} logs={logs} />
+          <VehicleCard key={v.id} vehicle={v} types={types} logs={logs} mileageLogs={mileageLogs} />
         ))}
       </div>
 

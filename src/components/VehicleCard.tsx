@@ -1,21 +1,26 @@
 "use client";
 
-import type { MaintenanceType, MaintenanceLog, Vehicle } from "@/lib/types";
+import type { MaintenanceType, MaintenanceLog, MileageLog, Vehicle } from "@/lib/types";
 import { computeMaintenanceStatus, projectedMileage } from "@/lib/maintenance-status";
+import { computeMileageTrend } from "@/lib/mileage-trend";
+import MileageSparkline from "@/components/MileageSparkline";
 
 export default function VehicleCard({
   vehicle,
   types,
   logs,
+  mileageLogs,
 }: {
   vehicle: Vehicle;
   types: MaintenanceType[];
   logs: MaintenanceLog[];
+  mileageLogs: MileageLog[];
 }) {
   const miles = projectedMileage(vehicle);
   const status = computeMaintenanceStatus(vehicle, types, logs);
   const overdue = status.filter((s) => s.status === "overdue").length;
   const soon = status.filter((s) => s.status === "due-soon").length;
+  const trend = computeMileageTrend(vehicle, logs, mileageLogs);
 
   return (
     <div className="w-full shrink-0 snap-center px-1">
@@ -57,6 +62,12 @@ export default function VehicleCard({
             </span>
           )}
         </div>
+
+        {trend.length >= 2 && (
+          <div className="w-full mt-4">
+            <MileageSparkline points={trend} />
+          </div>
+        )}
       </div>
     </div>
   );

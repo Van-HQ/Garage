@@ -2,21 +2,37 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus, Loader2, CarFront } from "lucide-react";
+import { Plus, Loader2, CarFront, Droplet, CircleDot, Sparkles, Wand2, ClipboardCheck, Wrench } from "lucide-react";
 import { useGarageData } from "@/lib/useGarageData";
 import { computeMaintenanceStatus } from "@/lib/maintenance-status";
+import { usePhotoUrls } from "@/lib/usePhotoUrls";
 import VehicleSwiper from "@/components/VehicleSwiper";
 import StatusRow from "@/components/StatusRow";
 
+const ICONS: Record<string, typeof Wrench> = {
+  droplet: Droplet,
+  "circle-dot": CircleDot,
+  sparkles: Sparkles,
+  "wand-2": Wand2,
+  "clipboard-check": ClipboardCheck,
+  wrench: Wrench,
+};
+
 export default function HomePage() {
-  const { vehicles, types, logs, loading } = useGarageData();
+  const { vehicles, types, logs, mileageLogs, photos, loading } = useGarageData();
   const [index, setIndex] = useState(0);
   const vehicle = vehicles[index];
+  const photoUrls = usePhotoUrls(photos);
 
   const status = useMemo(() => {
     if (!vehicle) return [];
     return computeMaintenanceStatus(vehicle, types, logs).slice(0, 4);
   }, [vehicle, types, logs]);
+
+  const recent = useMemo(() => {
+    if (!vehicle) return [];
+    return logs.filter((l) => l.vehicle_id === vehicle.id).slice(0, 3);
+  }, [vehicle, logs]);
 
   if (loading) {
     return (
@@ -56,7 +72,7 @@ export default function HomePage() {
         </Link>
       </div>
 
-      <VehicleSwiper vehicles={vehicles} types={types} logs={logs} onIndexChange={setIndex} />
+      <VehicleSwiper vehicles={vehicles} types={types} logs={logs} mileageLogs={mileageLogs} onIndexChange={setIndex} />
 
       {vehicle && (
         <div className="flex flex-col gap-3">
@@ -77,6 +93,48 @@ export default function HomePage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {vehicle && recent.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-sm font-semibold text-muted">Recent Activity</h3>
+            <Link href="/maintenance" className="text-sm font-medium text-accent">
+              View all
+            </Link>
+          </div>
+          <div className="list-panel">
+            {recent.map((log) => {
+              const type = types.find((t) => t.id === log.maintenance_type_id);
+              const Icon = ICONS[type?.icon ?? "wrench"] ?? Wrench;
+              const photo = photos.find((p) => p.maintenance_log_id === log.id);
+              const thumbUrl = photo ? photoUrls[photo.storage_path] : undefined;
+
+              return (
+                <div key={log.id} className="list-row">
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: "color-mix(in srgb, var(--status-ok) 15%, transparent)", color: "var(--status-ok)" }}
+                  >
+                    <Icon className="w-3.5 h-3.5" strokeWidth={2} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[15px] font-medium truncate">{log.title}</p>
+                    <p className="text-xs text-muted truncate">
+                      {new Date(log.performed_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })} ·{" "}
+                      {log.mileage_at.toLocaleString()} mi
+                      {log.cost ? ` · $${log.cost.toLocaleString()}` : ""}
+                    </p>
+                  </div>
+                  {thumbUrl && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={thumbUrl} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </main>
