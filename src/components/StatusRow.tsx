@@ -1,15 +1,7 @@
 import Link from "next/link";
-import { Droplet, CircleDot, Sparkles, Wand2, ClipboardCheck, Wrench, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import type { MaintenanceStatusItem } from "@/lib/maintenance-status";
-
-const ICONS: Record<string, typeof Wrench> = {
-  droplet: Droplet,
-  "circle-dot": CircleDot,
-  sparkles: Sparkles,
-  "wand-2": Wand2,
-  "clipboard-check": ClipboardCheck,
-  wrench: Wrench,
-};
+import { MAINTENANCE_ICONS } from "@/lib/maintenance-icons";
 
 const STATUS_COLOR: Record<MaintenanceStatusItem["status"], string> = {
   overdue: "var(--status-overdue)",
@@ -26,7 +18,7 @@ const STATUS_LABEL: Record<MaintenanceStatusItem["status"], string> = {
 };
 
 export default function StatusRow({ item, vehicleId }: { item: MaintenanceStatusItem; vehicleId: string }) {
-  const Icon = ICONS[item.type.icon] ?? Wrench;
+  const Icon = MAINTENANCE_ICONS[item.type.icon] ?? MAINTENANCE_ICONS.wrench;
   const color = STATUS_COLOR[item.status];
 
   let detail = "No interval set";

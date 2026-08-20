@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { Loader2, Trash2 } from "lucide-react";
 import { useGarageData } from "@/lib/useGarageData";
 import { computeMaintenanceStatus } from "@/lib/maintenance-status";
 import { computeCostBreakdown } from "@/lib/cost";
 import { usePhotoUrls } from "@/lib/usePhotoUrls";
+import { MAINTENANCE_ICONS } from "@/lib/maintenance-icons";
 import { createClient } from "@/lib/supabase/client";
 import StatusRow from "@/components/StatusRow";
 import CostBreakdown from "@/components/CostBreakdown";
@@ -114,10 +116,12 @@ export default function MaintenancePage() {
           <div className="list-panel">
             {history.map((log) => {
               const logPhotos = photos.filter((p) => p.maintenance_log_id === log.id);
+              const type = types.find((t) => t.id === log.maintenance_type_id);
+              const Icon = MAINTENANCE_ICONS[type?.icon ?? "wrench"] ?? MAINTENANCE_ICONS.wrench;
               return (
                 <div key={log.id} className="list-row-col">
                   <div className="flex items-start gap-3.5">
-                    <div className="flex-1 min-w-0">
+                    <Link href={`/log?edit=${log.id}`} className="flex-1 min-w-0 active:opacity-70">
                       <p className="text-[15px] font-medium truncate">{log.title}</p>
                       <p className="text-xs text-muted truncate">
                         {new Date(log.performed_at).toLocaleDateString(undefined, {
@@ -129,6 +133,12 @@ export default function MaintenancePage() {
                         {log.cost ? ` · $${log.cost.toLocaleString()}` : ""}
                       </p>
                       {log.notes && <p className="text-xs text-muted mt-1 truncate">{log.notes}</p>}
+                    </Link>
+                    <div
+                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ background: "color-mix(in srgb, var(--status-ok) 15%, transparent)", color: "var(--status-ok)" }}
+                    >
+                      <Icon className="w-3.5 h-3.5" strokeWidth={2} />
                     </div>
                     <button onClick={() => deleteLog(log.id)} className="text-muted p-1.5 shrink-0" aria-label="Delete entry">
                       <Trash2 className="w-4 h-4" />

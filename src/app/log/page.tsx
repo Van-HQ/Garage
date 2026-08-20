@@ -2,10 +2,12 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, CheckCircle2, Gauge, Wrench, Camera, X } from "lucide-react";
+import { Loader2, CheckCircle2, Gauge, Wrench, Camera, X, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useGarageData } from "@/lib/useGarageData";
+import { usePhotoUrls } from "@/lib/usePhotoUrls";
 import { projectedMileage } from "@/lib/maintenance-status";
+import type { MaintenancePhoto } from "@/lib/types";
 
 type Mode = "maintenance" | "mileage";
 
@@ -30,7 +32,8 @@ function LogPageInner() {
   const searchParams = useSearchParams();
   const prefillVehicle = searchParams.get("vehicle");
   const prefillType = searchParams.get("type");
-  const { vehicles, types, loading, refresh } = useGarageData();
+  const editLogId = searchParams.get("edit");
+  const { vehicles, types, logs, photos, loading, refresh } = useGarageData();
   const [mode, setMode] = useState<Mode>("maintenance");
   const [vehicleId, setVehicleId] = useState("");
   const [typeId, setTypeId] = useState("");
@@ -38,18 +41,41 @@ function LogPageInner() {
   const [notes, setNotes] = useState("");
   const [cost, setCost] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [photos, setPhotos] = useState<PendingPhoto[]>([]);
+  const [photos_, setPhotos] = useState<PendingPhoto[]>([]);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [editPrefilled, setEditPrefilled] = useState(false);
+
+  const editingLog = useMemo(
+    () => (editLogId ? logs.find((l) => l.id === editLogId) ?? null : null),
+    [logs, editLogId]
+  );
+  const editLogPhotos = useMemo(
+    () => (editLogId ? photos.filter((p) => p.maintenance_log_id === editLogId) : []),
+    [photos, editLogId]
+  );
+  const existingPhotoUrls = usePhotoUrls(editLogPhotos);
 
   useEffect(() => {
-    if (vehicleId || vehicles.length === 0) return;
+    if (!editingLog || editPrefilled) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- prefill form once when editing an existing entry
+    setVehicleId(editingLog.vehicle_id);
+    setTypeId(editingLog.maintenance_type_id ?? "");
+    setMileage(String(editingLog.mileage_at));
+    setDate(editingLog.performed_at.slice(0, 10));
+    setCost(editingLog.cost != null ? String(editingLog.cost) : "");
+    setNotes(editingLog.notes ?? "");
+    setEditPrefilled(true);
+  }, [editingLog, editPrefilled]);
+
+  useEffect(() => {
+    if (editLogId || vehicleId || vehicles.length === 0) return;
     const match = prefillVehicle && vehicles.some((v) => v.id === prefillVehicle);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- default/prefill selection once data loads
     setVehicleId(match ? prefillVehicle! : vehicles[0].id);
-  }, [vehicles, vehicleId, prefillVehicle]);
+  }, [vehicles, vehicleId, prefillVehicle, editLogId]);
 
   const vehicle = useMemo(() => vehicles.find((v) => v.id === vehicleId), [vehicles, vehicleId]);
   const vehicleTypes = useMemo(
@@ -60,17 +86,18 @@ function LogPageInner() {
   useEffect(() => {
     // Backlogging a specific item (arrived with ?type=) should prompt for the
     // actual historical mileage rather than defaulting to today's projection.
+    if (editLogId) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (vehicle && !mileage && !prefillType) setMileage(String(projectedMileage(vehicle)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vehicle]);
+  }, [vehicle, editLogId]);
 
   useEffect(() => {
-    if (typeId || vehicleTypes.length === 0) return;
+    if (editLogId || typeId || vehicleTypes.length === 0) return;
     const match = prefillType && vehicleTypes.some((t) => t.id === prefillType);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- default/prefill selection once types load
     setTypeId(match ? prefillType! : vehicleTypes[0].id);
-  }, [vehicleTypes, typeId, prefillType]);
+  }, [vehicleTypes, typeId, prefillType, editLogId]);
 
   function addPhotos(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -83,6 +110,22 @@ function LogPageInner() {
       URL.revokeObjectURL(prev[index].previewUrl);
       return prev.filter((_, i) => i !== index);
     });
+  }
+
+  async function removeExistingPhoto(photo: MaintenancePhoto) {
+    const supabase = createClient();
+    await supabase.storage.from("maintenance-photos").remove([photo.storage_path]);
+    await supabase.from("maintenance_photos").delete().eq("id", photo.id);
+    await refresh();
+  }
+
+  async function deleteEntry() {
+    if (!editLogId) return;
+    setSaving(true);
+    const supabase = createClient();
+    await supabase.from("maintenance_logs").delete().eq("id", editLogId);
+    await refresh();
+    router.push("/maintenance");
   }
 
   async function submit(e: React.FormEvent) {
@@ -104,46 +147,49 @@ function LogPageInner() {
 
     if (mode === "maintenance") {
       const type = vehicleTypes.find((t) => t.id === typeId);
-      const { data: inserted, error: insertError } = await supabase
-        .from("maintenance_logs")
-        .insert({
-          user_id: user.id,
-          vehicle_id: vehicle.id,
-          maintenance_type_id: typeId || null,
-          title: type?.name ?? "Maintenance",
-          notes,
-          cost: cost ? Number(cost) : null,
-          mileage_at: Number(mileage),
-          performed_at: performedAt,
-        })
-        .select()
-        .single();
+      const payload = {
+        vehicle_id: vehicle.id,
+        maintenance_type_id: typeId || null,
+        title: type?.name ?? "Maintenance",
+        notes,
+        cost: cost ? Number(cost) : null,
+        mileage_at: Number(mileage),
+        performed_at: performedAt,
+      };
 
-      if (insertError || !inserted) {
+      const { data: saved_, error: saveError } = editLogId
+        ? await supabase.from("maintenance_logs").update(payload).eq("id", editLogId).select().single()
+        : await supabase
+            .from("maintenance_logs")
+            .insert({ ...payload, user_id: user.id })
+            .select()
+            .single();
+
+      if (saveError || !saved_) {
         setSaving(false);
-        setSubmitError(insertError?.message ?? "Couldn't save this entry. Try again.");
+        setSubmitError(saveError?.message ?? "Couldn't save this entry. Try again.");
         return;
       }
 
-      if (photos.length > 0) {
+      if (photos_.length > 0) {
         const failedUploads: string[] = [];
-        for (const photo of photos) {
+        for (const photo of photos_) {
           const ext = photo.file.name.split(".").pop() || "jpg";
-          const path = `${user.id}/${inserted.id}/${crypto.randomUUID()}.${ext}`;
+          const path = `${user.id}/${saved_.id}/${crypto.randomUUID()}.${ext}`;
           const { error: uploadError } = await supabase.storage
             .from("maintenance-photos")
             .upload(path, photo.file, { contentType: photo.file.type || "image/jpeg" });
           if (!uploadError) {
             await supabase.from("maintenance_photos").insert({
               user_id: user.id,
-              maintenance_log_id: inserted.id,
+              maintenance_log_id: saved_.id,
               storage_path: path,
             });
           } else {
             failedUploads.push(photo.file.name);
           }
         }
-        photos.forEach((p) => URL.revokeObjectURL(p.previewUrl));
+        photos_.forEach((p) => URL.revokeObjectURL(p.previewUrl));
         if (failedUploads.length > 0) {
           setSubmitError(`Entry saved, but ${failedUploads.length} photo(s) failed to upload.`);
         }
@@ -166,6 +212,12 @@ function LogPageInner() {
 
     await refresh();
     setSaving(false);
+
+    if (editLogId) {
+      router.push("/maintenance");
+      return;
+    }
+
     setSaved(true);
     setNotes("");
     setCost("");
@@ -195,8 +247,10 @@ function LogPageInner() {
   return (
     <main className="flex-1 px-5 pt-[calc(env(safe-area-inset-top)+1.75rem)] pb-40 flex flex-col gap-6">
       <div>
-        <p className="text-xs font-medium tracking-[0.14em] uppercase text-muted">New Entry</p>
-        <h1 className="text-2xl font-semibold tracking-tight mt-0.5">Log</h1>
+        <p className="text-xs font-medium tracking-[0.14em] uppercase text-muted">
+          {editLogId ? "Edit Entry" : "New Entry"}
+        </p>
+        <h1 className="text-2xl font-semibold tracking-tight mt-0.5">{editLogId ? "Edit" : "Log"}</h1>
       </div>
 
       {/* Vehicle selector */}
@@ -218,25 +272,27 @@ function LogPageInner() {
       </div>
 
       {/* Mode toggle */}
-      <div className="glass-panel rounded-2xl p-1 flex gap-1">
-        {[
-          { key: "maintenance" as Mode, label: "Maintenance", icon: Wrench },
-          { key: "mileage" as Mode, label: "Mileage only", icon: Gauge },
-        ].map(({ key, label, icon: Icon }) => (
-          <button
-            key={key}
-            onClick={() => setMode(key)}
-            className="flex-1 min-w-0 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-medium transition-all"
-            style={{
-              background: mode === key ? "var(--accent)" : "transparent",
-              color: mode === key ? "var(--accent-foreground)" : "var(--muted)",
-            }}
-          >
-            <Icon className="w-4 h-4" strokeWidth={1.75} />
-            {label}
-          </button>
-        ))}
-      </div>
+      {!editLogId && (
+        <div className="glass-panel rounded-2xl p-1 flex gap-1">
+          {[
+            { key: "maintenance" as Mode, label: "Maintenance", icon: Wrench },
+            { key: "mileage" as Mode, label: "Mileage only", icon: Gauge },
+          ].map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              onClick={() => setMode(key)}
+              className="flex-1 min-w-0 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-medium transition-all"
+              style={{
+                background: mode === key ? "var(--accent)" : "transparent",
+                color: mode === key ? "var(--accent-foreground)" : "var(--muted)",
+              }}
+            >
+              <Icon className="w-4 h-4" strokeWidth={1.75} />
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <form onSubmit={submit} className="flex flex-col gap-4">
         {mode === "maintenance" && (
@@ -319,7 +375,26 @@ function LogPageInner() {
               onChange={addPhotos}
             />
             <div className="flex flex-wrap gap-2.5">
-              {photos.map((p, i) => (
+              {editLogPhotos.map((p) => {
+                const url = existingPhotoUrls[p.storage_path];
+                return (
+                  <div key={p.id} className="relative w-16 h-16 shrink-0">
+                    {url && (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={url} alt="" className="w-full h-full object-cover rounded-xl" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeExistingPhoto(p)}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center text-white"
+                      aria-label="Remove photo"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                );
+              })}
+              {photos_.map((p, i) => (
                 <div key={p.previewUrl} className="relative w-16 h-16 shrink-0">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.previewUrl} alt="" className="w-full h-full object-cover rounded-xl" />
@@ -361,8 +436,21 @@ function LogPageInner() {
           ) : saved ? (
             <CheckCircle2 className="w-4 h-4" />
           ) : null}
-          {saved ? "Saved" : "Save entry"}
+          {saved ? "Saved" : editLogId ? "Save changes" : "Save entry"}
         </button>
+
+        {editLogId && (
+          <button
+            type="button"
+            onClick={deleteEntry}
+            disabled={saving}
+            className="flex items-center justify-center gap-1.5 text-xs font-medium disabled:opacity-60"
+            style={{ color: "var(--status-overdue)" }}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Delete entry
+          </button>
+        )}
       </form>
     </main>
   );

@@ -2,21 +2,13 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus, Loader2, CarFront, Droplet, CircleDot, Sparkles, Wand2, ClipboardCheck, Wrench } from "lucide-react";
+import { Plus, Loader2, CarFront } from "lucide-react";
 import { useGarageData } from "@/lib/useGarageData";
 import { computeMaintenanceStatus } from "@/lib/maintenance-status";
 import { usePhotoUrls } from "@/lib/usePhotoUrls";
+import { MAINTENANCE_ICONS } from "@/lib/maintenance-icons";
 import VehicleSwiper from "@/components/VehicleSwiper";
 import StatusRow from "@/components/StatusRow";
-
-const ICONS: Record<string, typeof Wrench> = {
-  droplet: Droplet,
-  "circle-dot": CircleDot,
-  sparkles: Sparkles,
-  "wand-2": Wand2,
-  "clipboard-check": ClipboardCheck,
-  wrench: Wrench,
-};
 
 export default function HomePage() {
   const { vehicles, types, logs, mileageLogs, photos, loading } = useGarageData();
@@ -107,12 +99,12 @@ export default function HomePage() {
           <div className="list-panel">
             {recent.map((log) => {
               const type = types.find((t) => t.id === log.maintenance_type_id);
-              const Icon = ICONS[type?.icon ?? "wrench"] ?? Wrench;
+              const Icon = MAINTENANCE_ICONS[type?.icon ?? "wrench"] ?? MAINTENANCE_ICONS.wrench;
               const photo = photos.find((p) => p.maintenance_log_id === log.id);
               const thumbUrl = photo ? photoUrls[photo.storage_path] : undefined;
 
               return (
-                <div key={log.id} className="list-row">
+                <Link key={log.id} href={`/log?edit=${log.id}`} className="list-row active:opacity-70">
                   <div
                     className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                     style={{ background: "color-mix(in srgb, var(--status-ok) 15%, transparent)", color: "var(--status-ok)" }}
@@ -131,7 +123,7 @@ export default function HomePage() {
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img src={thumbUrl} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
                   )}
-                </div>
+                </Link>
               );
             })}
           </div>
