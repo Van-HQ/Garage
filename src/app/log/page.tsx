@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, CheckCircle2, Gauge, Wrench } from "lucide-react";
+import { Loader2, CheckCircle2, Gauge, Wrench, Camera, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useGarageData } from "@/lib/useGarageData";
 import { projectedMileage } from "@/lib/maintenance-status";
 
 type Mode = "maintenance" | "mileage";
+
+type PendingPhoto = { file: File; previewUrl: string };
 
 export default function LogPage() {
   const router = useRouter();
@@ -19,6 +21,8 @@ export default function LogPage() {
   const [notes, setNotes] = useState("");
   const [cost, setCost] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [photos, setPhotos] = useState<PendingPhoto[]>([]);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -44,6 +48,19 @@ export default function LogPage() {
     if (!typeId && vehicleTypes.length > 0) setTypeId(vehicleTypes[0].id);
   }, [vehicleTypes, typeId]);
 
+  function addPhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    setPhotos((prev) => [...prev, ...files.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }))]);
+  }
+
+  function removePhoto(index: number) {
+    setPhotos((prev) => {
+      URL.revokeObjectURL(prev[index].previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!vehicle) return;
@@ -58,16 +75,38 @@ export default function LogPage() {
 
     if (mode === "maintenance") {
       const type = vehicleTypes.find((t) => t.id === typeId);
-      await supabase.from("maintenance_logs").insert({
-        user_id: user.id,
-        vehicle_id: vehicle.id,
-        maintenance_type_id: typeId || null,
-        title: type?.name ?? "Maintenance",
-        notes,
-        cost: cost ? Number(cost) : null,
-        mileage_at: Number(mileage),
-        performed_at: performedAt,
-      });
+      const { data: inserted } = await supabase
+        .from("maintenance_logs")
+        .insert({
+          user_id: user.id,
+          vehicle_id: vehicle.id,
+          maintenance_type_id: typeId || null,
+          title: type?.name ?? "Maintenance",
+          notes,
+          cost: cost ? Number(cost) : null,
+          mileage_at: Number(mileage),
+          performed_at: performedAt,
+        })
+        .select()
+        .single();
+
+      if (inserted && photos.length > 0) {
+        for (const photo of photos) {
+          const ext = photo.file.name.split(".").pop() || "jpg";
+          const path = `${user.id}/${inserted.id}/${crypto.randomUUID()}.${ext}`;
+          const { error: uploadError } = await supabase.storage
+            .from("maintenance-photos")
+            .upload(path, photo.file, { contentType: photo.file.type || "image/jpeg" });
+          if (!uploadError) {
+            await supabase.from("maintenance_photos").insert({
+              user_id: user.id,
+              maintenance_log_id: inserted.id,
+              storage_path: path,
+            });
+          }
+        }
+        photos.forEach((p) => URL.revokeObjectURL(p.previewUrl));
+      }
     } else {
       await supabase.from("mileage_logs").insert({
         user_id: user.id,
@@ -83,6 +122,7 @@ export default function LogPage() {
     setSaved(true);
     setNotes("");
     setCost("");
+    setPhotos([]);
     setTimeout(() => setSaved(false), 1800);
   }
 
@@ -216,6 +256,44 @@ export default function LogPage() {
             className="glass-input w-full min-w-0 rounded-2xl px-4 py-3 text-sm outline-none resize-none"
           />
         </label>
+
+        {mode === "maintenance" && (
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-medium text-muted uppercase tracking-wide">Photos (optional)</span>
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={addPhotos}
+            />
+            <div className="flex flex-wrap gap-2.5">
+              {photos.map((p, i) => (
+                <div key={p.previewUrl} className="relative w-16 h-16 shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.previewUrl} alt="" className="w-full h-full object-cover rounded-xl" />
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(i)}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center text-white"
+                    aria-label="Remove photo"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => photoInputRef.current?.click()}
+                className="glass-input w-16 h-16 shrink-0 rounded-xl flex items-center justify-center text-muted"
+                aria-label="Add photo"
+              >
+                <Camera className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
 
         <button
           type="submit"

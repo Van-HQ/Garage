@@ -40,6 +40,14 @@ export type MaintenanceLog = {
   created_at: string;
 };
 
+export type MaintenancePhoto = {
+  id: string;
+  user_id: string;
+  maintenance_log_id: string;
+  storage_path: string;
+  created_at: string;
+};
+
 export type MileageLog = {
   id: string;
   user_id: string;

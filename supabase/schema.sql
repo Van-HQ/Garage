@@ -120,3 +120,34 @@ create policy "manuals: users manage own files" on storage.objects
   for all
   using (bucket_id = 'manuals' and auth.uid()::text = (storage.foldername(name))[1])
   with check (bucket_id = 'manuals' and auth.uid()::text = (storage.foldername(name))[1]);
+
+-- ============ MAINTENANCE PHOTOS (receipts, before/after shots per log entry) ============
+-- Safe to run standalone even if the tables above already exist.
+
+create table if not exists maintenance_photos (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  maintenance_log_id uuid not null references maintenance_logs(id) on delete cascade,
+  storage_path text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table maintenance_photos enable row level security;
+
+drop policy if exists "maintenance_photos are owned by user" on maintenance_photos;
+create policy "maintenance_photos are owned by user" on maintenance_photos
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create index if not exists idx_maintenance_photos_log on maintenance_photos(maintenance_log_id);
+
+insert into storage.buckets (id, name, public)
+values ('maintenance-photos', 'maintenance-photos', false)
+on conflict (id) do nothing;
+
+-- Files live at "<user_id>/<maintenance_log_id>/<random>.jpg" — same
+-- per-user-folder restriction as the manuals bucket above.
+drop policy if exists "maintenance-photos: users manage own files" on storage.objects;
+create policy "maintenance-photos: users manage own files" on storage.objects
+  for all
+  using (bucket_id = 'maintenance-photos' and auth.uid()::text = (storage.foldername(name))[1])
+  with check (bucket_id = 'maintenance-photos' and auth.uid()::text = (storage.foldername(name))[1]);
