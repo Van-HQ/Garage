@@ -67,17 +67,19 @@ export const MAINTENANCE_CATEGORIES: { value: MaintenanceType["category"]; label
   { value: "custom", label: "Custom", icon: "wrench" },
 ];
 
-/**
- * General-purpose intervals, not manufacturer-specific — a starting point to
- * edit or delete, not a substitute for the vehicle's actual owner's manual.
- */
-export const MAINTENANCE_PRESETS: {
+export type MaintenancePreset = {
   name: string;
   category: MaintenanceType["category"];
   icon: string;
   interval_miles: number | null;
   interval_days: number | null;
-}[] = [
+};
+
+/**
+ * General-purpose intervals, not manufacturer-specific — a starting point to
+ * edit or delete, not a substitute for the vehicle's actual owner's manual.
+ */
+export const MAINTENANCE_PRESETS: MaintenancePreset[] = [
   { name: "Oil Change", category: "oil", icon: "droplet", interval_miles: 5000, interval_days: 180 },
   { name: "Tire Rotation", category: "tires", icon: "circle-dot", interval_miles: 6000, interval_days: null },
   { name: "Cabin Air Filter", category: "custom", icon: "wrench", interval_miles: 15000, interval_days: 365 },
@@ -88,4 +90,24 @@ export const MAINTENANCE_PRESETS: {
   { name: "Transmission Fluid", category: "custom", icon: "wrench", interval_miles: 30000, interval_days: null },
   { name: "Battery Check", category: "inspection", icon: "clipboard-check", interval_miles: null, interval_days: 365 },
   { name: "Wiper Blades", category: "custom", icon: "wrench", interval_miles: null, interval_days: 365 },
+];
+
+/**
+ * Derived directly from Toyota's official 2024 Tacoma Warranty & Maintenance
+ * Guide (toyota.com/content/dam/toyota/brochures/pdf/2024/T-MMS-24Tacoma.pdf),
+ * normal (non-severe) driving conditions. Toyota's real schedule is a
+ * conditional checklist that varies item-by-item across visits — this is a
+ * single-interval simplification of the items that had a clear, repeated
+ * "replace at X miles" instruction in the source document. Items only
+ * scheduled under towing/dirt-road/severe conditions (differential oil,
+ * transfer case oil, propeller shaft re-torque, etc.) were intentionally
+ * left out rather than guessed at.
+ */
+export const TACOMA_2024_PRESETS: MaintenancePreset[] = [
+  { name: "Oil & Filter Change", category: "oil", icon: "droplet", interval_miles: 10000, interval_days: 365 },
+  { name: "Tire Rotation", category: "tires", icon: "circle-dot", interval_miles: 5000, interval_days: 180 },
+  { name: "Brake Inspection", category: "inspection", icon: "clipboard-check", interval_miles: 5000, interval_days: 180 },
+  { name: "Cabin Air Filter", category: "custom", icon: "wrench", interval_miles: 30000, interval_days: null },
+  { name: "Engine Air Filter", category: "custom", icon: "wrench", interval_miles: 30000, interval_days: null },
+  { name: "Spark Plugs", category: "custom", icon: "wrench", interval_miles: 40000, interval_days: 1460 },
 ];

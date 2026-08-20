@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Plus, Trash2, Car, Truck, LogOut, X, FileText, Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useGarageData } from "@/lib/useGarageData";
-import { MAINTENANCE_CATEGORIES, MAINTENANCE_PRESETS } from "@/lib/types";
+import { MAINTENANCE_CATEGORIES, MAINTENANCE_PRESETS, TACOMA_2024_PRESETS, type MaintenancePreset } from "@/lib/types";
 
 const ICON_OPTIONS: { value: string; icon: typeof Car }[] = [
   { value: "truck", icon: Truck },
@@ -19,7 +19,7 @@ export default function SettingsPage() {
   const { vehicles, types, loading, refresh } = useGarageData();
   const [addingVehicle, setAddingVehicle] = useState(false);
   const [addingTypeFor, setAddingTypeFor] = useState<string | "all" | null>(null);
-  const [showPresets, setShowPresets] = useState(false);
+  const [presetSet, setPresetSet] = useState<"generic" | "tacoma2024" | null>(null);
   const [manualBusyFor, setManualBusyFor] = useState<string | null>(null);
   const manualInputRef = useRef<HTMLInputElement>(null);
   const pendingManualVehicle = useRef<string | null>(null);
@@ -205,7 +205,14 @@ export default function SettingsPage() {
           <h3 className="text-sm font-semibold text-muted">Maintenance types</h3>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setShowPresets(true)}
+              onClick={() => setPresetSet("tacoma2024")}
+              className="text-sm font-medium text-accent"
+              disabled={vehicles.length === 0}
+            >
+              2024 Tacoma
+            </button>
+            <button
+              onClick={() => setPresetSet("generic")}
               className="text-sm font-medium text-accent"
               disabled={vehicles.length === 0}
             >
@@ -253,12 +260,19 @@ export default function SettingsPage() {
           />
         )}
 
-        {showPresets && (
+        {presetSet && (
           <PresetPicker
             vehicles={vehicles}
-            onClose={() => setShowPresets(false)}
+            presets={presetSet === "tacoma2024" ? TACOMA_2024_PRESETS : MAINTENANCE_PRESETS}
+            title={presetSet === "tacoma2024" ? "2024 Tacoma schedule" : "Quick add common services"}
+            description={
+              presetSet === "tacoma2024"
+                ? "Pulled directly from Toyota's official 2024 Tacoma Warranty & Maintenance Guide (normal driving conditions). Items only scheduled under towing/dirt-road conditions were left out rather than guessed at."
+                : "General guidelines to start from — check each vehicle's owner's manual for exact intervals, then edit or delete any of these later."
+            }
+            onClose={() => setPresetSet(null)}
             onSaved={async () => {
-              setShowPresets(false);
+              setPresetSet(null);
               await refresh();
             }}
           />
@@ -358,14 +372,20 @@ function VehicleForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
 
 function PresetPicker({
   vehicles,
+  presets,
+  title,
+  description,
   onClose,
   onSaved,
 }: {
   vehicles: { id: string; name: string }[];
+  presets: MaintenancePreset[];
+  title: string;
+  description: string;
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [selected, setSelected] = useState<Set<string>>(new Set(MAINTENANCE_PRESETS.map((p) => p.name)));
+  const [selected, setSelected] = useState<Set<string>>(new Set(presets.map((p) => p.name)));
   const [scope, setScope] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
@@ -387,7 +407,7 @@ function PresetPicker({
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    const rows = MAINTENANCE_PRESETS.filter((p) => selected.has(p.name)).map((p) => ({
+    const rows = presets.filter((p) => selected.has(p.name)).map((p) => ({
       user_id: user.id,
       vehicle_id: scope || null,
       name: p.name,
@@ -405,14 +425,12 @@ function PresetPicker({
   return (
     <div className="glass-panel rounded-3xl p-5 flex flex-col gap-3.5 mt-1">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold">Quick add common services</p>
+        <p className="text-sm font-semibold">{title}</p>
         <button type="button" onClick={onClose} className="text-muted">
           <X className="w-4 h-4" />
         </button>
       </div>
-      <p className="text-xs text-muted -mt-2">
-        General guidelines to start from — check each vehicle&apos;s owner&apos;s manual for exact intervals, then edit or delete any of these later.
-      </p>
+      <p className="text-xs text-muted -mt-2">{description}</p>
 
       <label className="flex flex-col gap-2">
         <span className="text-xs font-medium text-muted uppercase tracking-wide">Applies to</span>
@@ -427,7 +445,7 @@ function PresetPicker({
       </label>
 
       <div className="flex flex-col gap-2">
-        {MAINTENANCE_PRESETS.map((p) => {
+        {presets.map((p) => {
           const checked = selected.has(p.name);
           const detail = [
             p.interval_miles ? `${p.interval_miles.toLocaleString()} mi` : null,
