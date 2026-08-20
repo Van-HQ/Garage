@@ -17,7 +17,7 @@ export default function BottomNav() {
   if (pathname.startsWith("/login")) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <div className="glass-pill flex items-center gap-1 rounded-full px-2 py-2">
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);

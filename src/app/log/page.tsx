@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, CheckCircle2, Gauge, Wrench, Camera, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useGarageData } from "@/lib/useGarageData";
@@ -12,7 +12,24 @@ type Mode = "maintenance" | "mileage";
 type PendingPhoto = { file: File; previewUrl: string };
 
 export default function LogPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-muted" />
+        </main>
+      }
+    >
+      <LogPageInner />
+    </Suspense>
+  );
+}
+
+function LogPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const prefillVehicle = searchParams.get("vehicle");
+  const prefillType = searchParams.get("type");
   const { vehicles, types, loading, refresh } = useGarageData();
   const [mode, setMode] = useState<Mode>("maintenance");
   const [vehicleId, setVehicleId] = useState("");
@@ -27,9 +44,11 @@ export default function LogPage() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- default selection once data loads
-    if (!vehicleId && vehicles.length > 0) setVehicleId(vehicles[0].id);
-  }, [vehicles, vehicleId]);
+    if (vehicleId || vehicles.length === 0) return;
+    const match = prefillVehicle && vehicles.some((v) => v.id === prefillVehicle);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- default/prefill selection once data loads
+    setVehicleId(match ? prefillVehicle! : vehicles[0].id);
+  }, [vehicles, vehicleId, prefillVehicle]);
 
   const vehicle = useMemo(() => vehicles.find((v) => v.id === vehicleId), [vehicles, vehicleId]);
   const vehicleTypes = useMemo(
@@ -38,15 +57,19 @@ export default function LogPage() {
   );
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- seed mileage once vehicle loads, not on every keystroke
-    if (vehicle && !mileage) setMileage(String(projectedMileage(vehicle)));
+    // Backlogging a specific item (arrived with ?type=) should prompt for the
+    // actual historical mileage rather than defaulting to today's projection.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (vehicle && !mileage && !prefillType) setMileage(String(projectedMileage(vehicle)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vehicle]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- default selection once types load
-    if (!typeId && vehicleTypes.length > 0) setTypeId(vehicleTypes[0].id);
-  }, [vehicleTypes, typeId]);
+    if (typeId || vehicleTypes.length === 0) return;
+    const match = prefillType && vehicleTypes.some((t) => t.id === prefillType);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- default/prefill selection once types load
+    setTypeId(match ? prefillType! : vehicleTypes[0].id);
+  }, [vehicleTypes, typeId, prefillType]);
 
   function addPhotos(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -198,7 +221,7 @@ export default function LogPage() {
             <select
               value={typeId}
               onChange={(e) => setTypeId(e.target.value)}
-              className="glass-input w-full min-w-0 rounded-2xl px-4 py-3 text-sm outline-none"
+              className="glass-input w-0 min-w-full rounded-2xl px-4 py-3 text-sm outline-none"
             >
               {vehicleTypes.length === 0 && <option value="">No types yet — add in Settings</option>}
               {vehicleTypes.map((t) => (
@@ -211,14 +234,17 @@ export default function LogPage() {
         )}
 
         <label className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-muted uppercase tracking-wide">Odometer (mi)</span>
+          <span className="text-xs font-medium text-muted uppercase tracking-wide">
+            Odometer (mi){prefillType && !mileage ? " — when this was actually done" : ""}
+          </span>
           <input
             type="number"
             required
             inputMode="numeric"
+            placeholder={prefillType ? "e.g. mileage a few weeks ago" : undefined}
             value={mileage}
             onChange={(e) => setMileage(e.target.value)}
-            className="glass-input w-full min-w-0 rounded-2xl px-4 py-3 text-sm outline-none"
+            className="glass-input w-0 min-w-full rounded-2xl px-4 py-3 text-sm outline-none"
           />
         </label>
 
@@ -229,7 +255,7 @@ export default function LogPage() {
             required
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="glass-input w-full min-w-0 rounded-2xl px-4 py-3 text-sm outline-none"
+            className="glass-input w-0 min-w-full rounded-2xl px-4 py-3 text-sm outline-none"
           />
         </label>
 
@@ -241,7 +267,7 @@ export default function LogPage() {
               inputMode="decimal"
               value={cost}
               onChange={(e) => setCost(e.target.value)}
-              className="glass-input w-full min-w-0 rounded-2xl px-4 py-3 text-sm outline-none"
+              className="glass-input w-0 min-w-full rounded-2xl px-4 py-3 text-sm outline-none"
             />
           </label>
         )}
@@ -253,7 +279,7 @@ export default function LogPage() {
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
             placeholder="Synthetic 5W-30, rotated tires too..."
-            className="glass-input w-full min-w-0 rounded-2xl px-4 py-3 text-sm outline-none resize-none"
+            className="glass-input w-0 min-w-full rounded-2xl px-4 py-3 text-sm outline-none resize-none"
           />
         </label>
 

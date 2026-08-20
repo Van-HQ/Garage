@@ -1,4 +1,5 @@
-import { Droplet, CircleDot, Sparkles, Wand2, ClipboardCheck, Wrench } from "lucide-react";
+import Link from "next/link";
+import { Droplet, CircleDot, Sparkles, Wand2, ClipboardCheck, Wrench, ChevronRight } from "lucide-react";
 import type { MaintenanceStatusItem } from "@/lib/maintenance-status";
 
 const ICONS: Record<string, typeof Wrench> = {
@@ -24,7 +25,7 @@ const STATUS_LABEL: Record<MaintenanceStatusItem["status"], string> = {
   unscheduled: "Not logged",
 };
 
-export default function StatusRow({ item }: { item: MaintenanceStatusItem }) {
+export default function StatusRow({ item, vehicleId }: { item: MaintenanceStatusItem; vehicleId: string }) {
   const Icon = ICONS[item.type.icon] ?? Wrench;
   const color = STATUS_COLOR[item.status];
 
@@ -43,7 +44,10 @@ export default function StatusRow({ item }: { item: MaintenanceStatusItem }) {
   }
 
   return (
-    <div className="glass-panel rounded-3xl px-4 py-3.5 flex items-center gap-3.5">
+    <Link
+      href={`/log?vehicle=${vehicleId}&type=${item.type.id}`}
+      className="glass-panel rounded-3xl px-4 py-3.5 flex items-center gap-3.5 active:opacity-80"
+    >
       <div
         className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
         style={{ background: `color-mix(in srgb, ${color} 16%, transparent)`, color }}
@@ -60,6 +64,7 @@ export default function StatusRow({ item }: { item: MaintenanceStatusItem }) {
       >
         {STATUS_LABEL[item.status]}
       </span>
-    </div>
+      <ChevronRight className="w-4 h-4 text-muted shrink-0" strokeWidth={1.75} />
+    </Link>
   );
 }

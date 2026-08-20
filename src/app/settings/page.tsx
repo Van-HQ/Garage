@@ -416,7 +416,7 @@ function PresetPicker({
 
       <label className="flex flex-col gap-2">
         <span className="text-xs font-medium text-muted uppercase tracking-wide">Applies to</span>
-        <select value={scope} onChange={(e) => setScope(e.target.value)} className="glass-input w-full min-w-0 rounded-2xl px-4 py-3 text-sm outline-none">
+        <select value={scope} onChange={(e) => setScope(e.target.value)} className="glass-input w-0 min-w-full rounded-2xl px-4 py-3 text-sm outline-none">
           <option value="">All vehicles</option>
           {vehicles.map((v) => (
             <option key={v.id} value={v.id}>
@@ -540,7 +540,7 @@ function TypeForm({
 
       <label className="flex flex-col gap-2">
         <span className="text-xs font-medium text-muted uppercase tracking-wide">Applies to</span>
-        <select value={scope} onChange={(e) => setScope(e.target.value)} className="glass-input w-full min-w-0 rounded-2xl px-4 py-3 text-sm outline-none">
+        <select value={scope} onChange={(e) => setScope(e.target.value)} className="glass-input w-0 min-w-full rounded-2xl px-4 py-3 text-sm outline-none">
           <option value="">All vehicles</option>
           {vehicles.map((v) => (
             <option key={v.id} value={v.id}>
@@ -582,7 +582,7 @@ function Field({
         required={required}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="glass-input w-full rounded-2xl px-4 py-3 text-sm outline-none min-w-0"
+        className="glass-input w-0 min-w-full rounded-2xl px-4 py-3 text-sm outline-none"
       />
     </label>
   );

@@ -1,13 +1,4 @@
 export default function VehicleGlyph({ icon, className }: { icon: string; className?: string }) {
-  const corners = (
-    <g stroke="currentColor" strokeWidth="2" strokeOpacity="0.55" strokeLinecap="round">
-      <path d="M4,16 L4,4 L16,4" fill="none" />
-      <path d="M224,4 L236,4 L236,16" fill="none" />
-      <path d="M236,104 L236,116 L224,116" fill="none" />
-      <path d="M16,116 L4,116 L4,104" fill="none" />
-    </g>
-  );
-
   const datum = (
     <line x1="4" y1="80" x2="236" y2="80" stroke="currentColor" strokeWidth="1" strokeOpacity="0.3" strokeDasharray="1 5" strokeLinecap="round" />
   );
@@ -44,7 +35,6 @@ export default function VehicleGlyph({ icon, className }: { icon: string; classN
   if (icon === "car") {
     return (
       <svg viewBox="0 0 240 120" fill="none" className={className}>
-        {corners}
         {datum}
         <path
           d="M14,78 C14,66 14,58 24,54 L48,44 L64,22 C67,17.5 72,15 77.5,15 L158,15 C164,15 169.5,18 172.5,23 L188,46 C196,48 202,55 202,64 L202,78 Z"
@@ -64,7 +54,6 @@ export default function VehicleGlyph({ icon, className }: { icon: string; classN
 
   return (
     <svg viewBox="0 0 240 120" fill="none" className={className}>
-      {corners}
       {datum}
       <path
         d="M10,78 L10,64 C10,58 12,54 16,50 C22,44 30,42 40,41 L70,38 L85,17 C88,12.5 93,10 98.5,10 L138,10 C143,10 147.5,12.5 150,17 L156,28 L200,28 C209,28 216,35 216,44 L216,64 C216,72 210,78 202,78 Z"

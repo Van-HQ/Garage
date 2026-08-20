@@ -59,7 +59,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="bg-transparent outline-none w-full min-w-0 text-sm"
+                    className="bg-transparent outline-none w-0 min-w-full text-sm"
                   />
                 </div>
               </label>

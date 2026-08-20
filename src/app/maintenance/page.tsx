@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { useGarageData } from "@/lib/useGarageData";
 import { computeMaintenanceStatus } from "@/lib/maintenance-status";
 import { computeCostBreakdown } from "@/lib/cost";
@@ -10,9 +10,15 @@ import StatusRow from "@/components/StatusRow";
 import CostBreakdown from "@/components/CostBreakdown";
 
 export default function MaintenancePage() {
-  const { vehicles, types, logs, photos, loading } = useGarageData();
+  const { vehicles, types, logs, photos, loading, refresh } = useGarageData();
   const [vehicleId, setVehicleId] = useState("");
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+
+  async function deleteLog(id: string) {
+    const supabase = createClient();
+    await supabase.from("maintenance_logs").delete().eq("id", id);
+    await refresh();
+  }
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- default selection once data loads
@@ -108,7 +114,7 @@ export default function MaintenancePage() {
               No maintenance types set up yet. Add some in Settings.
             </div>
           ) : (
-            status.map((item) => <StatusRow key={item.type.id} item={item} />)
+            status.map((item) => vehicle && <StatusRow key={item.type.id} item={item} vehicleId={vehicle.id} />)
           )}
         </div>
       </div>
@@ -146,6 +152,9 @@ export default function MaintenancePage() {
                       </p>
                       {log.notes && <p className="text-xs text-muted mt-1 truncate">{log.notes}</p>}
                     </div>
+                    <button onClick={() => deleteLog(log.id)} className="text-muted p-2 shrink-0" aria-label="Delete entry">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                   {logPhotos.length > 0 && (
                     <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">

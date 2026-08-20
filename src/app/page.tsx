@@ -77,7 +77,7 @@ export default function HomePage() {
                 No maintenance items yet. Add some in Settings.
               </div>
             ) : (
-              status.map((item) => <StatusRow key={item.type.id} item={item} />)
+              status.map((item) => <StatusRow key={item.type.id} item={item} vehicleId={vehicle.id} />)
             )}
           </div>
         </div>
