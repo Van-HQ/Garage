@@ -193,7 +193,7 @@ function LogPageInner() {
   }
 
   return (
-    <main className="flex-1 px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-40 flex flex-col gap-6">
+    <main className="flex-1 px-5 pt-[calc(env(safe-area-inset-top)+1.75rem)] pb-40 flex flex-col gap-6">
       <div>
         <p className="text-xs font-medium tracking-[0.14em] uppercase text-muted">New Entry</p>
         <h1 className="text-2xl font-semibold tracking-tight mt-0.5">Log</h1>

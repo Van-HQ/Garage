@@ -60,7 +60,7 @@ export default function MaintenancePage() {
   }
 
   return (
-    <main className="flex-1 px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-40 flex flex-col gap-6">
+    <main className="flex-1 px-5 pt-[calc(env(safe-area-inset-top)+1.75rem)] pb-40 flex flex-col gap-6">
       <div>
         <p className="text-xs font-medium tracking-[0.14em] uppercase text-muted">Upkeep</p>
         <h1 className="text-2xl font-semibold tracking-tight mt-0.5">Maintenance</h1>
@@ -115,8 +115,8 @@ export default function MaintenancePage() {
             {history.map((log) => {
               const logPhotos = photos.filter((p) => p.maintenance_log_id === log.id);
               return (
-                <div key={log.id} className="list-row flex-col items-stretch gap-2.5">
-                  <div className="flex items-center gap-3.5">
+                <div key={log.id} className="list-row-col">
+                  <div className="flex items-start gap-3.5">
                     <div className="flex-1 min-w-0">
                       <p className="text-[15px] font-medium truncate">{log.title}</p>
                       <p className="text-xs text-muted truncate">
