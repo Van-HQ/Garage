@@ -130,110 +130,91 @@ export default function EditEntryModal({
           </button>
         </div>
 
-        <label className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-muted uppercase tracking-wide">Type</span>
-          <select
-            value={typeId}
-            onChange={(e) => setTypeId(e.target.value)}
-            className="glass-input w-0 min-w-full rounded-2xl px-4 py-3 text-sm outline-none"
-          >
-            {vehicleTypes.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="form-panel">
+          <label className="form-row">
+            <span className="form-label">Type</span>
+            <select value={typeId} onChange={(e) => setTypeId(e.target.value)} className="form-field">
+              {vehicleTypes.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <label className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-muted uppercase tracking-wide">Odometer (mi)</span>
-          <input
-            type="number"
-            required
-            inputMode="numeric"
-            value={mileage}
-            onChange={(e) => setMileage(e.target.value)}
-            className="glass-input w-0 min-w-full rounded-2xl px-4 py-3 text-sm outline-none"
-          />
-        </label>
+          <label className="form-row">
+            <span className="form-label">Odometer (mi)</span>
+            <input
+              type="number"
+              required
+              inputMode="numeric"
+              value={mileage}
+              onChange={(e) => setMileage(e.target.value)}
+              className="form-field"
+            />
+          </label>
 
-        <label className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-muted uppercase tracking-wide">Date</span>
-          <input
-            type="date"
-            required
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="glass-input w-0 min-w-full rounded-2xl px-4 py-3 text-sm outline-none"
-          />
-        </label>
+          <label className="form-row">
+            <span className="form-label">Date</span>
+            <input type="date" required value={date} onChange={(e) => setDate(e.target.value)} className="form-field" />
+          </label>
 
-        <label className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-muted uppercase tracking-wide">Cost ($, optional)</span>
-          <input
-            type="number"
-            inputMode="decimal"
-            value={cost}
-            onChange={(e) => setCost(e.target.value)}
-            className="glass-input w-0 min-w-full rounded-2xl px-4 py-3 text-sm outline-none"
-          />
-        </label>
+          <label className="form-row">
+            <span className="form-label">Cost ($, optional)</span>
+            <input type="number" inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} className="form-field" />
+          </label>
 
-        <label className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-muted uppercase tracking-wide">Notes</span>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={3}
-            className="glass-input w-0 min-w-full rounded-2xl px-4 py-3 text-sm outline-none resize-none"
-          />
-        </label>
+          <label className="form-row">
+            <span className="form-label">Notes</span>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="form-field resize-none" />
+          </label>
 
-        <div className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-muted uppercase tracking-wide">Photos</span>
-          <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={addPhotos} />
-          <div className="flex flex-wrap gap-2.5">
-            {photos.map((p) => {
-              const url = existingPhotoUrls[p.storage_path];
-              return (
-                <div key={p.id} className="relative w-16 h-16 shrink-0">
-                  {url && (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={url} alt="" className="w-full h-full object-cover rounded-xl" />
-                  )}
+          <div className="form-row">
+            <span className="form-label">Photos</span>
+            <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={addPhotos} />
+            <div className="flex flex-wrap gap-2.5 mt-1">
+              {photos.map((p) => {
+                const url = existingPhotoUrls[p.storage_path];
+                return (
+                  <div key={p.id} className="relative w-16 h-16 shrink-0">
+                    {url && (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={url} alt="" className="w-full h-full object-cover rounded-xl" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeExistingPhoto(p)}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center text-white"
+                      aria-label="Remove photo"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                );
+              })}
+              {newPhotos.map((p, i) => (
+                <div key={p.previewUrl} className="relative w-16 h-16 shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.previewUrl} alt="" className="w-full h-full object-cover rounded-xl" />
                   <button
                     type="button"
-                    onClick={() => removeExistingPhoto(p)}
+                    onClick={() => removeNewPhoto(i)}
                     className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center text-white"
                     aria-label="Remove photo"
                   >
                     <X className="w-3 h-3" />
                   </button>
                 </div>
-              );
-            })}
-            {newPhotos.map((p, i) => (
-              <div key={p.previewUrl} className="relative w-16 h-16 shrink-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.previewUrl} alt="" className="w-full h-full object-cover rounded-xl" />
-                <button
-                  type="button"
-                  onClick={() => removeNewPhoto(i)}
-                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center text-white"
-                  aria-label="Remove photo"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={() => photoInputRef.current?.click()}
-              className="glass-input w-16 h-16 shrink-0 rounded-xl flex items-center justify-center text-muted"
-              aria-label="Add photo"
-            >
-              <Camera className="w-5 h-5" />
-            </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => photoInputRef.current?.click()}
+                className="glass-input w-16 h-16 shrink-0 rounded-xl flex items-center justify-center text-muted"
+                aria-label="Add photo"
+              >
+                <Camera className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
 

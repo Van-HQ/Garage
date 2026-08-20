@@ -193,7 +193,7 @@ function LogPageInner() {
   }
 
   return (
-    <main className="flex-1 px-5 pt-[calc(env(safe-area-inset-top)+1.75rem)] pb-40 flex flex-col gap-6">
+    <main className="flex-1 px-5 pt-[calc(env(safe-area-inset-top)+1.75rem)] pb-40 flex flex-col gap-4">
       <div>
         <p className="text-xs font-medium tracking-[0.14em] uppercase text-muted">New Entry</p>
         <h1 className="text-2xl font-semibold tracking-tight mt-0.5">Log</h1>
@@ -238,115 +238,100 @@ function LogPageInner() {
         ))}
       </div>
 
-      <form onSubmit={submit} className="flex flex-col gap-4">
-        {mode === "maintenance" && (
-          <label className="flex flex-col gap-2">
-            <span className="text-xs font-medium text-muted uppercase tracking-wide">Type</span>
-            <select
-              value={typeId}
-              onChange={(e) => setTypeId(e.target.value)}
-              className="glass-input w-0 min-w-full rounded-2xl px-4 py-3 text-sm outline-none"
-            >
-              {vehicleTypes.length === 0 && <option value="">No types yet — add in Settings</option>}
-              {vehicleTypes.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
+      <form onSubmit={submit} className="flex flex-col gap-5">
+        <div className="form-panel">
+          {mode === "maintenance" && (
+            <label className="form-row">
+              <span className="form-label">Type</span>
+              <select value={typeId} onChange={(e) => setTypeId(e.target.value)} className="form-field">
+                {vehicleTypes.length === 0 && <option value="">No types yet — add in Settings</option>}
+                {vehicleTypes.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
 
-        <label className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-muted uppercase tracking-wide">
-            Odometer (mi){prefillType && !mileage ? " — when this was actually done" : ""}
-          </span>
-          <input
-            type="number"
-            required
-            inputMode="numeric"
-            placeholder={prefillType ? "e.g. mileage a few weeks ago" : undefined}
-            value={mileage}
-            onChange={(e) => setMileage(e.target.value)}
-            className="glass-input w-0 min-w-full rounded-2xl px-4 py-3 text-sm outline-none"
-          />
-        </label>
-
-        <label className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-muted uppercase tracking-wide">Date</span>
-          <input
-            type="date"
-            required
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="glass-input w-0 min-w-full rounded-2xl px-4 py-3 text-sm outline-none"
-          />
-        </label>
-
-        {mode === "maintenance" && (
-          <label className="flex flex-col gap-2">
-            <span className="text-xs font-medium text-muted uppercase tracking-wide">Cost ($, optional)</span>
+          <label className="form-row">
+            <span className="form-label">
+              Odometer (mi){prefillType && !mileage ? " — when this was actually done" : ""}
+            </span>
             <input
               type="number"
-              inputMode="decimal"
-              value={cost}
-              onChange={(e) => setCost(e.target.value)}
-              className="glass-input w-0 min-w-full rounded-2xl px-4 py-3 text-sm outline-none"
+              required
+              inputMode="numeric"
+              placeholder={prefillType ? "e.g. mileage a few weeks ago" : undefined}
+              value={mileage}
+              onChange={(e) => setMileage(e.target.value)}
+              className="form-field"
             />
           </label>
-        )}
 
-        <label className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-muted uppercase tracking-wide">Notes</span>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={3}
-            placeholder="Synthetic 5W-30, rotated tires too..."
-            className="glass-input w-0 min-w-full rounded-2xl px-4 py-3 text-sm outline-none resize-none"
-          />
-        </label>
+          <label className="form-row">
+            <span className="form-label">Date</span>
+            <input type="date" required value={date} onChange={(e) => setDate(e.target.value)} className="form-field" />
+          </label>
 
-        {mode === "maintenance" && (
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-medium text-muted uppercase tracking-wide">Photos (optional)</span>
-            <input
-              ref={photoInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={addPhotos}
+          {mode === "maintenance" && (
+            <label className="form-row">
+              <span className="form-label">Cost ($, optional)</span>
+              <input
+                type="number"
+                inputMode="decimal"
+                value={cost}
+                onChange={(e) => setCost(e.target.value)}
+                className="form-field"
+              />
+            </label>
+          )}
+
+          <label className="form-row">
+            <span className="form-label">Notes</span>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              placeholder="Synthetic 5W-30, rotated tires too..."
+              className="form-field resize-none"
             />
-            <div className="flex flex-wrap gap-2.5">
-              {photos.map((p, i) => (
-                <div key={p.previewUrl} className="relative w-16 h-16 shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.previewUrl} alt="" className="w-full h-full object-cover rounded-xl" />
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(i)}
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center text-white"
-                    aria-label="Remove photo"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => photoInputRef.current?.click()}
-                className="glass-input w-16 h-16 shrink-0 rounded-xl flex items-center justify-center text-muted"
-                aria-label="Add photo"
-              >
-                <Camera className="w-5 h-5" />
-              </button>
+          </label>
+
+          {mode === "maintenance" && (
+            <div className="form-row">
+              <span className="form-label">Photos (optional)</span>
+              <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={addPhotos} />
+              <div className="flex flex-wrap gap-2.5 mt-1">
+                {photos.map((p, i) => (
+                  <div key={p.previewUrl} className="relative w-16 h-16 shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.previewUrl} alt="" className="w-full h-full object-cover rounded-xl" />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(i)}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center text-white"
+                      aria-label="Remove photo"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  className="glass-input w-16 h-16 shrink-0 rounded-xl flex items-center justify-center text-muted"
+                  aria-label="Add photo"
+                >
+                  <Camera className="w-5 h-5" />
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {submitError && (
-          <p className="text-xs text-center" style={{ color: "var(--status-overdue)" }}>
+          <p className="text-xs text-center -mt-2" style={{ color: "var(--status-overdue)" }}>
             {submitError}
           </p>
         )}
@@ -354,7 +339,7 @@ function LogPageInner() {
         <button
           type="submit"
           disabled={saving || !vehicle}
-          className="btn-accent rounded-2xl py-3.5 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60 mt-1"
+          className="btn-accent rounded-2xl py-3.5 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60"
         >
           {saving ? (
             <Loader2 className="w-4 h-4 animate-spin" />
