@@ -42,6 +42,7 @@ function LogPageInner() {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
     if (vehicleId || vehicles.length === 0) return;
@@ -88,17 +89,22 @@ function LogPageInner() {
     e.preventDefault();
     if (!vehicle) return;
     setSaving(true);
+    setSubmitError("");
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setSaving(false);
+      setSubmitError("You're signed out — please sign in again.");
+      return;
+    }
 
     const performedAt = new Date(date + "T12:00:00").toISOString();
 
     if (mode === "maintenance") {
       const type = vehicleTypes.find((t) => t.id === typeId);
-      const { data: inserted } = await supabase
+      const { data: inserted, error: insertError } = await supabase
         .from("maintenance_logs")
         .insert({
           user_id: user.id,
@@ -113,7 +119,14 @@ function LogPageInner() {
         .select()
         .single();
 
-      if (inserted && photos.length > 0) {
+      if (insertError || !inserted) {
+        setSaving(false);
+        setSubmitError(insertError?.message ?? "Couldn't save this entry. Try again.");
+        return;
+      }
+
+      if (photos.length > 0) {
+        const failedUploads: string[] = [];
         for (const photo of photos) {
           const ext = photo.file.name.split(".").pop() || "jpg";
           const path = `${user.id}/${inserted.id}/${crypto.randomUUID()}.${ext}`;
@@ -126,18 +139,29 @@ function LogPageInner() {
               maintenance_log_id: inserted.id,
               storage_path: path,
             });
+          } else {
+            failedUploads.push(photo.file.name);
           }
         }
         photos.forEach((p) => URL.revokeObjectURL(p.previewUrl));
+        if (failedUploads.length > 0) {
+          setSubmitError(`Entry saved, but ${failedUploads.length} photo(s) failed to upload.`);
+        }
       }
     } else {
-      await supabase.from("mileage_logs").insert({
+      const { error: insertError } = await supabase.from("mileage_logs").insert({
         user_id: user.id,
         vehicle_id: vehicle.id,
         mileage: Number(mileage),
         note: notes,
         recorded_at: performedAt,
       });
+
+      if (insertError) {
+        setSaving(false);
+        setSubmitError(insertError.message);
+        return;
+      }
     }
 
     await refresh();
@@ -319,6 +343,12 @@ function LogPageInner() {
               </button>
             </div>
           </div>
+        )}
+
+        {submitError && (
+          <p className="text-xs text-center" style={{ color: "var(--status-overdue)" }}>
+            {submitError}
+          </p>
         )}
 
         <button
