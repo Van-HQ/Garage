@@ -40,8 +40,10 @@ export function computeMaintenanceStatus(
         .sort((a, b) => new Date(b.performed_at).getTime() - new Date(a.performed_at).getTime());
       const lastLog = typeLogs[0] ?? null;
 
-      const baseMileage = lastLog ? lastLog.mileage_at : 0;
-      const baseDate = lastLog ? new Date(lastLog.performed_at) : new Date(vehicle.created_at);
+      const baseMileage = lastLog ? lastLog.mileage_at : (type.baseline_mileage ?? 0);
+      const baseDate = lastLog
+        ? new Date(lastLog.performed_at)
+        : new Date(type.baseline_date ?? vehicle.created_at);
 
       const dueMileage = type.interval_miles != null ? baseMileage + type.interval_miles : null;
       const dueDate =

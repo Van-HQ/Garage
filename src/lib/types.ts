@@ -24,6 +24,8 @@ export type MaintenanceType = {
   icon: string;
   interval_miles: number | null;
   interval_days: number | null;
+  baseline_mileage: number | null;
+  baseline_date: string | null;
   created_at: string;
 };
 

@@ -35,8 +35,14 @@ create table if not exists maintenance_types (
   icon text default 'wrench',
   interval_miles int,                 -- null = not mileage based
   interval_days int,                  -- null = not time based
+  baseline_mileage int,               -- manually-set "starts counting from" point, used when no log exists yet
+  baseline_date timestamptz,          -- e.g. battery check dated to purchase instead of today
   created_at timestamptz not null default now()
 );
+
+-- Safe to run standalone against a table created before these columns existed.
+alter table maintenance_types add column if not exists baseline_mileage int;
+alter table maintenance_types add column if not exists baseline_date timestamptz;
 
 alter table maintenance_types enable row level security;
 

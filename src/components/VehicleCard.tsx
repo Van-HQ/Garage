@@ -33,7 +33,7 @@ export default function VehicleCard({
           {miles.toLocaleString()}
         </p>
         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted mt-1.5">
-          Miles, estimated
+          Miles
         </p>
 
         <div className="flex items-center gap-2 mt-3">

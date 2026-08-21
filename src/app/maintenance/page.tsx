@@ -10,11 +10,13 @@ import { createClient } from "@/lib/supabase/client";
 import StatusRow from "@/components/StatusRow";
 import CostBreakdown from "@/components/CostBreakdown";
 import EditEntryModal from "@/components/EditEntryModal";
+import EditCareItemModal from "@/components/EditCareItemModal";
 
 export default function MaintenancePage() {
   const { vehicles, types, logs, photos, loading, refresh } = useGarageData();
   const [vehicleId, setVehicleId] = useState("");
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
+  const [editingTypeId, setEditingTypeId] = useState<string | null>(null);
   const photoUrls = usePhotoUrls(photos);
 
   async function deleteLog(id: string) {
@@ -46,6 +48,7 @@ export default function MaintenancePage() {
   }, [vehicle, logs, types]);
 
   const editingLog = useMemo(() => logs.find((l) => l.id === editingLogId) ?? null, [logs, editingLogId]);
+  const editingItem = useMemo(() => status.find((s) => s.type.id === editingTypeId) ?? null, [status, editingTypeId]);
 
   if (loading) {
     return (
@@ -96,7 +99,12 @@ export default function MaintenancePage() {
           </div>
         ) : (
           <div className="list-panel">
-            {status.map((item) => vehicle && <StatusRow key={item.type.id} item={item} vehicleId={vehicle.id} />)}
+            {status.map(
+              (item) =>
+                vehicle && (
+                  <StatusRow key={item.type.id} item={item} vehicleId={vehicle.id} onEdit={() => setEditingTypeId(item.type.id)} />
+                )
+            )}
           </div>
         )}
       </div>
@@ -165,6 +173,15 @@ export default function MaintenancePage() {
           types={types}
           photos={photos.filter((p) => p.maintenance_log_id === editingLog.id)}
           onClose={() => setEditingLogId(null)}
+          onSaved={refresh}
+        />
+      )}
+
+      {editingItem && (
+        <EditCareItemModal
+          type={editingItem.type}
+          lastLog={editingItem.lastLog}
+          onClose={() => setEditingTypeId(null)}
           onSaved={refresh}
         />
       )}

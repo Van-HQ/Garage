@@ -17,7 +17,16 @@ const STATUS_LABEL: Record<MaintenanceStatusItem["status"], string> = {
   unscheduled: "Not logged",
 };
 
-export default function StatusRow({ item, vehicleId }: { item: MaintenanceStatusItem; vehicleId: string }) {
+export default function StatusRow({
+  item,
+  vehicleId,
+  onEdit,
+}: {
+  item: MaintenanceStatusItem;
+  vehicleId: string;
+  /** When provided, tapping the row edits the item's baseline instead of opening the Log form. */
+  onEdit?: () => void;
+}) {
   const Icon = MAINTENANCE_ICONS[item.type.icon] ?? MAINTENANCE_ICONS.wrench;
   const color = STATUS_COLOR[item.status];
 
@@ -35,8 +44,8 @@ export default function StatusRow({ item, vehicleId }: { item: MaintenanceStatus
     detail = "Logged, no reminder set";
   }
 
-  return (
-    <Link href={`/log?vehicle=${vehicleId}&type=${item.type.id}`} className="list-row active:opacity-70">
+  const content = (
+    <>
       <div
         className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
         style={{ background: `color-mix(in srgb, ${color} 15%, transparent)`, color }}
@@ -54,6 +63,20 @@ export default function StatusRow({ item, vehicleId }: { item: MaintenanceStatus
         {STATUS_LABEL[item.status]}
       </span>
       <ChevronRight className="w-3.5 h-3.5 text-muted shrink-0" strokeWidth={2.25} />
+    </>
+  );
+
+  if (onEdit) {
+    return (
+      <button onClick={onEdit} className="list-row active:opacity-70 w-full text-left">
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={`/log?vehicle=${vehicleId}&type=${item.type.id}`} className="list-row active:opacity-70">
+      {content}
     </Link>
   );
 }

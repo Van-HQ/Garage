@@ -41,10 +41,11 @@ export const DEMO_VEHICLES: Vehicle[] = [
 ];
 
 export const DEMO_TYPES: MaintenanceType[] = [
-  { id: "t1", user_id: "u1", vehicle_id: null, name: "Oil Change", category: "oil", icon: "droplet", interval_miles: 5000, interval_days: 180, created_at: daysAgo(240) },
-  { id: "t2", user_id: "u1", vehicle_id: null, name: "Tire Rotation", category: "tires", icon: "circle-dot", interval_miles: 6000, interval_days: null, created_at: daysAgo(240) },
-  { id: "t3", user_id: "u1", vehicle_id: null, name: "Car Wash", category: "wash", icon: "sparkles", interval_miles: null, interval_days: 14, created_at: daysAgo(240) },
-  { id: "t4", user_id: "u1", vehicle_id: "v1", name: "Off-Road Suspension Check", category: "custom", icon: "wrench", interval_miles: 10000, interval_days: null, created_at: daysAgo(240) },
+  { id: "t1", user_id: "u1", vehicle_id: null, name: "Oil Change", category: "oil", icon: "droplet", interval_miles: 5000, interval_days: 180, baseline_mileage: null, baseline_date: null, created_at: daysAgo(240) },
+  { id: "t2", user_id: "u1", vehicle_id: null, name: "Tire Rotation", category: "tires", icon: "circle-dot", interval_miles: 6000, interval_days: null, baseline_mileage: null, baseline_date: null, created_at: daysAgo(240) },
+  { id: "t3", user_id: "u1", vehicle_id: null, name: "Car Wash", category: "wash", icon: "sparkles", interval_miles: null, interval_days: 14, baseline_mileage: null, baseline_date: null, created_at: daysAgo(240) },
+  { id: "t4", user_id: "u1", vehicle_id: "v1", name: "Off-Road Suspension Check", category: "custom", icon: "wrench", interval_miles: 10000, interval_days: null, baseline_mileage: null, baseline_date: null, created_at: daysAgo(240) },
+  { id: "t5", user_id: "u1", vehicle_id: "v1", name: "Battery Check", category: "inspection", icon: "clipboard-check", interval_miles: null, interval_days: 365, baseline_mileage: 0, baseline_date: daysAgo(240), created_at: daysAgo(240) },
 ];
 
 export const DEMO_LOGS: MaintenanceLog[] = [
