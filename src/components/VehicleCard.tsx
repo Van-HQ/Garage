@@ -65,7 +65,7 @@ export default function VehicleCard({
 
         {trend.length >= 2 && (
           <div className="w-full mt-4">
-            <MileageSparkline points={trend} />
+            <MileageSparkline points={trend} vehicleName={vehicle.name} />
           </div>
         )}
       </div>
