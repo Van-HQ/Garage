@@ -58,10 +58,16 @@ body {
 }
 
 body {
+  /* background-attachment: fixed pins these to the viewport instead of the
+     body's own (content-height-dependent) box — without it, the "-10%"
+     anchor lands far above the fold on tall pages, so the glow's actual
+     bright spot drifts down the page and the area right under the status
+     bar reads as flat and dark instead of glowing. */
   background:
     radial-gradient(1200px 600px at 15% -10%, color-mix(in srgb, var(--accent) 18%, transparent), transparent),
     radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent),
     var(--background);
+  background-attachment: fixed, fixed, fixed;
   color: var(--foreground);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", var(--font-sf), "Inter", system-ui, sans-serif;
   overscroll-behavior-y: none;
