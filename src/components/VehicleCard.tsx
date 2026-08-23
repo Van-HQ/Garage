@@ -23,7 +23,7 @@ export default function VehicleCard({
   const trend = computeMileageTrend(vehicle, logs, mileageLogs);
 
   return (
-    <div className="w-full shrink-0 snap-center px-1">
+    <div className="w-full shrink-0 snap-center [scroll-snap-stop:always] px-1">
       <div className="flex flex-col items-center text-center gap-1 pt-1 pb-2">
         <p className="text-[13px] font-semibold text-muted">
           {vehicle.name} · {vehicle.year} {vehicle.model}
