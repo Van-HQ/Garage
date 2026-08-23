@@ -11,12 +11,14 @@ import StatusRow from "@/components/StatusRow";
 import CostBreakdown from "@/components/CostBreakdown";
 import EditEntryModal from "@/components/EditEntryModal";
 import EditCareItemModal from "@/components/EditCareItemModal";
+import CareItemDetailModal from "@/components/CareItemDetailModal";
 
 export default function MaintenancePage() {
   const { vehicles, types, logs, photos, loading, refresh } = useGarageData();
   const [vehicleId, setVehicleId] = useState("");
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
   const [editingTypeId, setEditingTypeId] = useState<string | null>(null);
+  const [viewingTypeId, setViewingTypeId] = useState<string | null>(null);
   const photoUrls = usePhotoUrls(photos);
 
   async function deleteLog(id: string) {
@@ -49,6 +51,7 @@ export default function MaintenancePage() {
 
   const editingLog = useMemo(() => logs.find((l) => l.id === editingLogId) ?? null, [logs, editingLogId]);
   const editingItem = useMemo(() => status.find((s) => s.type.id === editingTypeId) ?? null, [status, editingTypeId]);
+  const viewingItem = useMemo(() => status.find((s) => s.type.id === viewingTypeId) ?? null, [status, viewingTypeId]);
 
   if (loading) {
     return (
@@ -102,7 +105,7 @@ export default function MaintenancePage() {
             {status.map(
               (item) =>
                 vehicle && (
-                  <StatusRow key={item.type.id} item={item} vehicleId={vehicle.id} onEdit={() => setEditingTypeId(item.type.id)} />
+                  <StatusRow key={item.type.id} item={item} vehicleId={vehicle.id} onEdit={() => setViewingTypeId(item.type.id)} />
                 )
             )}
           </div>
@@ -183,6 +186,23 @@ export default function MaintenancePage() {
           lastLog={editingItem.lastLog}
           onClose={() => setEditingTypeId(null)}
           onSaved={refresh}
+        />
+      )}
+
+      {viewingItem && vehicle && (
+        <CareItemDetailModal
+          item={viewingItem}
+          vehicle={vehicle}
+          logs={logs}
+          onClose={() => setViewingTypeId(null)}
+          onEditBaseline={() => {
+            setEditingTypeId(viewingItem.type.id);
+            setViewingTypeId(null);
+          }}
+          onOpenLog={(log) => {
+            setEditingLogId(log.id);
+            setViewingTypeId(null);
+          }}
         />
       )}
     </main>

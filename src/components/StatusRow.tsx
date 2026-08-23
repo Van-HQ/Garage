@@ -3,14 +3,14 @@ import { ChevronRight } from "lucide-react";
 import type { MaintenanceStatusItem } from "@/lib/maintenance-status";
 import { MAINTENANCE_ICONS } from "@/lib/maintenance-icons";
 
-const STATUS_COLOR: Record<MaintenanceStatusItem["status"], string> = {
+export const STATUS_COLOR: Record<MaintenanceStatusItem["status"], string> = {
   overdue: "var(--status-overdue)",
   "due-soon": "var(--status-soon)",
   ok: "var(--status-ok)",
   unscheduled: "var(--muted)",
 };
 
-const STATUS_LABEL: Record<MaintenanceStatusItem["status"], string> = {
+export const STATUS_LABEL: Record<MaintenanceStatusItem["status"], string> = {
   overdue: "Overdue",
   "due-soon": "Due soon",
   ok: "On track",
