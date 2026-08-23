@@ -43,7 +43,7 @@ export default function VehicleSwiper({
       <div
         ref={trackRef}
         onScroll={handleScroll}
-        className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar -mx-1"
+        className="flex overflow-x-auto snap-x snap-mandatory touch-pan-x no-scrollbar -mx-1"
       >
         {vehicles.map((v) => (
           <VehicleCard key={v.id} vehicle={v} types={types} logs={logs} mileageLogs={mileageLogs} />

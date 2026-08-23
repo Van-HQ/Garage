@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, Trash2, Car, Truck, LogOut, X, FileText, Upload } from "lucide-react";
+import { Loader2, Plus, Trash2, Car, Truck, LogOut, X, FileText, Upload, ChevronUp, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useGarageData } from "@/lib/useGarageData";
 import { MAINTENANCE_CATEGORIES, MAINTENANCE_PRESETS, TACOMA_2024_PRESETS, type MaintenancePreset } from "@/lib/types";
@@ -33,6 +33,18 @@ export default function SettingsPage() {
   async function deleteVehicle(id: string) {
     const supabase = createClient();
     await supabase.from("vehicles").delete().eq("id", id);
+    await refresh();
+  }
+
+  async function moveVehicle(index: number, direction: -1 | 1) {
+    const other = vehicles[index + direction];
+    const current = vehicles[index];
+    if (!other) return;
+    const supabase = createClient();
+    await Promise.all([
+      supabase.from("vehicles").update({ sort_order: other.sort_order }).eq("id", current.id),
+      supabase.from("vehicles").update({ sort_order: current.sort_order }).eq("id", other.id),
+    ]);
     await refresh();
   }
 
@@ -146,8 +158,28 @@ export default function SettingsPage() {
         />
 
         <div className="flex flex-col gap-2.5">
-          {vehicles.map((v) => (
+          {vehicles.map((v, i) => (
             <div key={v.id} className="glass-panel rounded-3xl px-4 py-3.5 flex items-center gap-3.5">
+              {vehicles.length > 1 && (
+                <div className="flex flex-col shrink-0 -my-1">
+                  <button
+                    onClick={() => moveVehicle(i, -1)}
+                    disabled={i === 0}
+                    className="text-muted p-1 disabled:opacity-25"
+                    aria-label={`Move ${v.name} up`}
+                  >
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => moveVehicle(i, 1)}
+                    disabled={i === vehicles.length - 1}
+                    className="text-muted p-1 disabled:opacity-25"
+                    aria-label={`Move ${v.name} down`}
+                  >
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">
                   {v.year} {v.make} {v.name}
