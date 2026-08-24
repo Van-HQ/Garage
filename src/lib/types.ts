@@ -112,4 +112,6 @@ export const TACOMA_2024_PRESETS: MaintenancePreset[] = [
   { name: "Cabin Air Filter", category: "custom", icon: "wrench", interval_miles: 30000, interval_days: null },
   { name: "Engine Air Filter", category: "custom", icon: "wrench", interval_miles: 30000, interval_days: null },
   { name: "Spark Plugs", category: "custom", icon: "wrench", interval_miles: 40000, interval_days: 1460 },
+  // Not part of Toyota's schedule — added as a personal-preference default, not sourced.
+  { name: "Car Wash", category: "wash", icon: "sparkles", interval_miles: null, interval_days: 14 },
 ];

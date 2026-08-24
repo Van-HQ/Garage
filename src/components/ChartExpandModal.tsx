@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { computeMonthlyMiles, type TrendPoint } from "@/lib/mileage-trend";
 
 type Mode = "care" | "monthly";
 
-const dateFmt = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+const dateFmt = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 
 export default function ChartExpandModal({
   points,
@@ -68,17 +68,34 @@ export default function ChartExpandModal({
           {mode === "care" ? <ExpandedCareChart points={points} /> : <ExpandedMonthlyChart points={points} />}
         </div>
 
-        <p className="text-[11px] text-center text-muted -mt-1">Scroll to see more history</p>
+        <p className="text-[11px] text-center text-muted -mt-1">Scroll for more history · tap a point for details</p>
       </div>
     </div>
   );
 }
 
+/** Small floating card anchored above the active point, clamped inside [0, width]. */
+function ScrubTooltip({ x, width, children }: { x: number; width: number; children: ReactNode }) {
+  const tooltipWidth = 148;
+  const left = Math.min(Math.max(x - tooltipWidth / 2, 0), width - tooltipWidth);
+  return (
+    <div
+      className="absolute top-0 glass-panel rounded-xl px-3 py-2 pointer-events-none"
+      style={{ left, width: tooltipWidth }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function ExpandedCareChart({ points }: { points: TrendPoint[] }) {
+  const [active, setActive] = useState<number | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
   const pointGap = 60;
   const padX = 24;
-  const padTop = 20;
-  const padBottom = 36;
+  const padTop = 44;
+  const padBottom = 28;
   const height = 220;
   const width = Math.max(320, padX * 2 + (points.length - 1) * pointGap);
 
@@ -96,9 +113,28 @@ function ExpandedCareChart({ points }: { points: TrendPoint[] }) {
   const linePath = coords.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x},${y}`).join(" ");
   const serviceCount = points.filter((p) => p.kind === "maintenance").length;
 
+  function handleTap(e: React.MouseEvent<SVGSVGElement>) {
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = e.clientX - rect.left;
+    let nearest = 0;
+    let nearestDist = Infinity;
+    coords.forEach(([cx], i) => {
+      const d = Math.abs(cx - x);
+      if (d < nearestDist) {
+        nearestDist = d;
+        nearest = i;
+      }
+    });
+    setActive(nearest);
+  }
+
+  const activePoint = active != null ? points[active] : null;
+  const activeCoord = active != null ? coords[active] : null;
+
   return (
-    <div>
-      <div className="flex items-baseline justify-between mb-2 text-[11px] font-semibold text-muted tabular-nums" style={{ width }}>
+    <div style={{ width }}>
+      <div className="flex items-baseline justify-between mb-2 text-[11px] font-semibold text-muted tabular-nums">
         <span>{min.toLocaleString()} mi</span>
         <span className="flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: "var(--status-soon)" }} />
@@ -107,7 +143,8 @@ function ExpandedCareChart({ points }: { points: TrendPoint[] }) {
         <span>{max.toLocaleString()} mi</span>
       </div>
 
-      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+      <div className="relative">
+      <svg ref={svgRef} width={width} height={height} viewBox={`0 0 ${width} ${height}`} onClick={handleTap} className="cursor-pointer">
         {[0.25, 0.5, 0.75].map((f) => (
           <line
             key={f}
@@ -126,79 +163,154 @@ function ExpandedCareChart({ points }: { points: TrendPoint[] }) {
         {coords.map(([x, y], i) => {
           const p = points[i];
           const isService = p.kind === "maintenance";
+          const isActive = i === active;
           return (
-            <g key={i}>
-              <circle
-                cx={x}
-                cy={y}
-                r={isService ? 4 : 2.5}
-                fill={isService ? "var(--status-soon)" : "var(--background-elevated)"}
-                stroke={isService ? "var(--background-elevated)" : "var(--accent)"}
-                strokeWidth={isService ? 1.5 : 1.5}
-              />
-              <text x={x} y={height - 14} textAnchor="middle" fontSize="9" fill="var(--muted)">
-                {dateFmt(p.date)}
-              </text>
-              <text x={x} y={y - 10} textAnchor="middle" fontSize="9" fontWeight="600" fill="var(--foreground)">
-                {p.mileage.toLocaleString()}
-              </text>
-            </g>
+            <circle
+              key={i}
+              cx={x}
+              cy={y}
+              r={isActive ? 5.5 : isService ? 4 : 2.5}
+              fill={isService ? "var(--status-soon)" : "var(--background-elevated)"}
+              stroke={isService ? "var(--background-elevated)" : "var(--accent)"}
+              strokeWidth={isActive ? 2 : 1.5}
+            />
           );
         })}
+
+        {activeCoord && (
+          <line x1={activeCoord[0]} y1={padTop - 8} x2={activeCoord[0]} y2={height - padBottom} stroke="var(--accent)" strokeWidth="1" strokeDasharray="2 3" />
+        )}
+
+        <text x={padX} y={height - 6} fontSize="9" fill="var(--muted)">
+          {dateFmt(points[0].date)}
+        </text>
+        <text x={width - padX} y={height - 6} textAnchor="end" fontSize="9" fill="var(--muted)">
+          {dateFmt(points[points.length - 1].date)}
+        </text>
       </svg>
+
+      {activePoint && activeCoord && (
+        <ScrubTooltip x={activeCoord[0]} width={width}>
+          <p className="text-[11px] font-semibold">{dateFmt(activePoint.date)}</p>
+          <p className="text-[11px] text-muted mt-0.5">{activePoint.mileage.toLocaleString()} mi</p>
+          {activePoint.kind === "maintenance" ? (
+            <p className="text-[11px] font-medium mt-1 flex items-center gap-1.5" style={{ color: "var(--status-soon)" }}>
+              <span className="w-1.5 h-1.5 rounded-full inline-block shrink-0" style={{ background: "var(--status-soon)" }} />
+              {activePoint.label ?? "Service"}
+            </p>
+          ) : (
+            <p className="text-[11px] text-muted mt-1">Odometer check-in</p>
+          )}
+        </ScrubTooltip>
+      )}
+      </div>
     </div>
   );
 }
 
 function ExpandedMonthlyChart({ points }: { points: TrendPoint[] }) {
+  const [active, setActive] = useState<number | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
   const data = computeMonthlyMiles(points, 60);
 
-  if (data.length === 0) {
+  if (data.length < 2) {
     return <div className="h-40 flex items-center justify-center text-xs text-muted">Not enough months of data yet</div>;
   }
 
-  const barWidth = 40;
-  const gap = 18;
+  const pointGap = 56;
   const padX = 24;
-  const padTop = 24;
-  const padBottom = 24;
+  const padTop = 44;
+  const padBottom = 28;
   const height = 220;
-  const width = Math.max(320, padX * 2 + data.length * barWidth + (data.length - 1) * gap);
+  const width = Math.max(320, padX * 2 + (data.length - 1) * pointGap);
   const max = Math.max(...data.map((d) => d.miles), 1);
 
+  const coords = data.map((d, i) => {
+    const x = padX + i * pointGap;
+    const y = height - padBottom - (d.miles / max) * (height - padTop - padBottom);
+    return [x, y] as const;
+  });
+
+  const linePath = coords.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x},${y}`).join(" ");
+
+  function handleTap(e: React.MouseEvent<SVGSVGElement>) {
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = e.clientX - rect.left;
+    let nearest = 0;
+    let nearestDist = Infinity;
+    coords.forEach(([cx], i) => {
+      const d = Math.abs(cx - x);
+      if (d < nearestDist) {
+        nearestDist = d;
+        nearest = i;
+      }
+    });
+    setActive(nearest);
+  }
+
+  const activeData = active != null ? data[active] : null;
+  const activeCoord = active != null ? coords[active] : null;
+
   return (
-    <div>
-      <div className="flex items-baseline justify-between mb-2 text-[11px] font-semibold text-muted tabular-nums" style={{ width }}>
+    <div style={{ width }}>
+      <div className="flex items-baseline justify-between mb-2 text-[11px] font-semibold text-muted tabular-nums">
         <span>0 mi</span>
         <span>{max.toLocaleString()} mi / mo</span>
       </div>
 
-      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-        {data.map((d, i) => {
-          const barH = Math.max((d.miles / max) * (height - padTop - padBottom), d.miles > 0 ? 2 : 0);
-          const x = padX + i * (barWidth + gap);
-          const isLast = i === data.length - 1;
+      <div className="relative">
+      <svg ref={svgRef} width={width} height={height} viewBox={`0 0 ${width} ${height}`} onClick={handleTap} className="cursor-pointer">
+        {[0.25, 0.5, 0.75].map((f) => (
+          <line
+            key={f}
+            x1={padX}
+            y1={padTop + (height - padTop - padBottom) * f}
+            x2={width - padX}
+            y2={padTop + (height - padTop - padBottom) * f}
+            stroke="var(--glass-border)"
+            strokeWidth="1"
+            strokeDasharray="2 3"
+          />
+        ))}
+
+        <path d={linePath} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+
+        {coords.map(([x, y], i) => {
+          const isActive = i === active;
+          const isLast = i === coords.length - 1;
           return (
-            <g key={i}>
-              <rect
-                x={x}
-                y={height - padBottom - barH}
-                width={barWidth}
-                height={barH}
-                rx={4}
-                fill="var(--accent)"
-                opacity={isLast ? 1 : 0.55}
-              />
-              <text x={x + barWidth / 2} y={height - padBottom - barH - 8} textAnchor="middle" fontSize="9" fontWeight="600" fill="var(--foreground)">
-                {d.miles.toLocaleString()}
-              </text>
-              <text x={x + barWidth / 2} y={height - 8} textAnchor="middle" fontSize="9" fill="var(--muted)">
-                {d.label}
-              </text>
-            </g>
+            <circle
+              key={i}
+              cx={x}
+              cy={y}
+              r={isActive ? 5.5 : isLast ? 3 : 1.75}
+              fill={isLast ? "var(--accent)" : "var(--background-elevated)"}
+              stroke="var(--accent)"
+              strokeWidth={isActive ? 2 : isLast ? 0 : 1.5}
+            />
           );
         })}
+
+        {activeCoord && (
+          <line x1={activeCoord[0]} y1={padTop - 8} x2={activeCoord[0]} y2={height - padBottom} stroke="var(--accent)" strokeWidth="1" strokeDasharray="2 3" />
+        )}
+
+        <text x={padX} y={height - 6} fontSize="9" fill="var(--muted)">
+          {data[0].label}
+        </text>
+        <text x={width - padX} y={height - 6} textAnchor="end" fontSize="9" fill="var(--muted)">
+          {data[data.length - 1].label}
+        </text>
       </svg>
+
+      {activeData && activeCoord && (
+        <ScrubTooltip x={activeCoord[0]} width={width}>
+          <p className="text-[11px] font-semibold">{activeData.fullLabel}</p>
+          <p className="text-[11px] text-muted mt-0.5">{activeData.miles.toLocaleString()} mi driven</p>
+        </ScrubTooltip>
+      )}
+      </div>
     </div>
   );
 }

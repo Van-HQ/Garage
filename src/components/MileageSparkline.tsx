@@ -38,7 +38,7 @@ export default function MileageSparkline({ points, vehicleName }: { points: Tren
       </div>
 
       <button onClick={() => setExpanded(true)} className="w-full text-left active:opacity-75 transition-opacity" aria-label="Expand mileage chart">
-        {mode === "care" ? <CareTrend points={points} /> : <MonthlyBars points={points} />}
+        {mode === "care" ? <CareTrend points={points} /> : <MonthlyLine points={points} />}
       </button>
 
       {expanded && (
@@ -125,18 +125,32 @@ function CareTrend({ points }: { points: TrendPoint[] }) {
   );
 }
 
-function MonthlyBars({ points }: { points: TrendPoint[] }) {
+function MonthlyLine({ points }: { points: TrendPoint[] }) {
   const data = computeMonthlyMiles(points);
 
-  if (data.length === 0) {
+  if (data.length < 2) {
     return <div className="h-16 flex items-center justify-center text-xs text-muted">Not enough months of data yet</div>;
   }
 
   const width = 300;
   const height = 64;
-  const gap = 10;
-  const barWidth = (width - gap * (data.length - 1)) / data.length;
-  const max = Math.max(...data.map((d) => d.miles), 1);
+  const padX = 4;
+  const padY = 10;
+
+  const miles = data.map((d) => d.miles);
+  const max = Math.max(...miles, 1);
+  const stepX = (width - padX * 2) / (data.length - 1);
+
+  const coords = data.map((d, i) => {
+    const x = padX + i * stepX;
+    const y = height - padY - (d.miles / max) * (height - padY * 2);
+    return [x, y] as const;
+  });
+
+  const linePath = coords.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x},${y}`).join(" ");
+  const [lastX] = coords[coords.length - 1];
+  const [firstX] = coords[0];
+  const areaPath = `${linePath} L${lastX},${height} L${firstX},${height} Z`;
 
   return (
     <>
@@ -146,31 +160,35 @@ function MonthlyBars({ points }: { points: TrendPoint[] }) {
       </div>
 
       <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="w-full h-16">
-        {data.map((d, i) => {
-          const barH = Math.max((d.miles / max) * (height - 4), d.miles > 0 ? 2 : 0);
-          const x = i * (barWidth + gap);
-          const isLast = i === data.length - 1;
+        <defs>
+          <linearGradient id="sparkFillMonthly" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
+        <path d={areaPath} fill="url(#sparkFillMonthly)" stroke="none" />
+        <path d={linePath} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+
+        {coords.map(([x, y], i) => {
+          const isLast = i === coords.length - 1;
           return (
-            <rect
+            <circle
               key={i}
-              x={x}
-              y={height - barH}
-              width={barWidth}
-              height={barH}
-              rx={3}
-              fill="var(--accent)"
-              opacity={isLast ? 1 : 0.5}
+              cx={x}
+              cy={y}
+              r={isLast ? 3 : 1.75}
+              fill={isLast ? "var(--accent)" : "var(--background-elevated)"}
+              stroke="var(--accent)"
+              strokeWidth={isLast ? 0 : 1.5}
             />
           );
         })}
       </svg>
 
       <div className="flex items-baseline justify-between px-0.5 mt-1">
-        {data.map((d, i) => (
-          <span key={i} className="text-[10px] font-medium text-muted" style={{ width: barWidth }}>
-            {d.label}
-          </span>
-        ))}
+        <span className="text-[10px] font-medium text-muted">{data[0].label}</span>
+        <span className="text-[10px] font-medium text-muted">{data[data.length - 1].label}</span>
       </div>
     </>
   );

@@ -20,7 +20,7 @@ export function computeMileageTrend(
   return points.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }
 
-export type MonthlyMiles = { label: string; miles: number };
+export type MonthlyMiles = { label: string; fullLabel: string; miles: number };
 
 /**
  * Miles driven per calendar month, derived by diffing the last known odometer
@@ -44,7 +44,8 @@ export function computeMonthlyMiles(points: TrendPoint[], limit = 6): MonthlyMil
     const [, prevMileage] = months[i - 1];
     const [year, month] = key.split("-").map(Number);
     const label = new Date(year, month, 1).toLocaleDateString(undefined, { month: "short" });
-    result.push({ label, miles: Math.max(0, mileage - prevMileage) });
+    const fullLabel = new Date(year, month, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    result.push({ label, fullLabel, miles: Math.max(0, mileage - prevMileage) });
   }
 
   return result.slice(-limit);
