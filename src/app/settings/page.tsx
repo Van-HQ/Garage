@@ -14,6 +14,19 @@ const ICON_OPTIONS: { value: string; icon: typeof Car }[] = [
 
 const ACCENT_OPTIONS = ["#e6d3c1", "#ff6a3d", "#0a84ff", "#34c759", "#af52de", "#ff375f", "#5e5ce6"];
 
+/** Bottom-sheet shell so these forms pop up over the screen instead of appending below a long list. */
+function SettingsSheet({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end justify-center">
+      <button className="absolute inset-0 bg-black/55 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
+      <div className="relative w-full max-w-md glass-panel rounded-t-[28px] rounded-b-none px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] flex flex-col gap-3.5 max-h-[86vh] overflow-y-auto">
+        <div className="w-9 h-1 rounded-full bg-[var(--muted)] opacity-40 mx-auto" />
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const router = useRouter();
   const { vehicles, types, loading, refresh } = useGarageData();
@@ -222,13 +235,15 @@ export default function SettingsPage() {
         </div>
 
         {addingVehicle && (
-          <VehicleForm
-            onClose={() => setAddingVehicle(false)}
-            onSaved={async () => {
-              setAddingVehicle(false);
-              await refresh();
-            }}
-          />
+          <SettingsSheet onClose={() => setAddingVehicle(false)}>
+            <VehicleForm
+              onClose={() => setAddingVehicle(false)}
+              onSaved={async () => {
+                setAddingVehicle(false);
+                await refresh();
+              }}
+            />
+          </SettingsSheet>
         )}
       </section>
 
@@ -287,44 +302,50 @@ export default function SettingsPage() {
         </div>
 
         {addingTypeFor && (
-          <TypeForm
-            vehicles={vehicles}
-            onClose={() => setAddingTypeFor(null)}
-            onSaved={async () => {
-              setAddingTypeFor(null);
-              await refresh();
-            }}
-          />
+          <SettingsSheet onClose={() => setAddingTypeFor(null)}>
+            <TypeForm
+              vehicles={vehicles}
+              onClose={() => setAddingTypeFor(null)}
+              onSaved={async () => {
+                setAddingTypeFor(null);
+                await refresh();
+              }}
+            />
+          </SettingsSheet>
         )}
 
         {editingType && (
-          <TypeForm
-            vehicles={vehicles}
-            editingType={editingType}
-            onClose={() => setEditingType(null)}
-            onSaved={async () => {
-              setEditingType(null);
-              await refresh();
-            }}
-          />
+          <SettingsSheet onClose={() => setEditingType(null)}>
+            <TypeForm
+              vehicles={vehicles}
+              editingType={editingType}
+              onClose={() => setEditingType(null)}
+              onSaved={async () => {
+                setEditingType(null);
+                await refresh();
+              }}
+            />
+          </SettingsSheet>
         )}
 
         {presetSet && (
-          <PresetPicker
-            vehicles={vehicles}
-            presets={presetSet === "tacoma2024" ? TACOMA_2024_PRESETS : MAINTENANCE_PRESETS}
-            title={presetSet === "tacoma2024" ? "2024 Tacoma schedule" : "Quick add common services"}
-            description={
-              presetSet === "tacoma2024"
-                ? "Pulled directly from Toyota's official 2024 Tacoma Warranty & Maintenance Guide (normal driving conditions). Items only scheduled under towing/dirt-road conditions were left out rather than guessed at."
-                : "General guidelines to start from — check each vehicle's owner's manual for exact intervals, then edit or delete any of these later."
-            }
-            onClose={() => setPresetSet(null)}
-            onSaved={async () => {
-              setPresetSet(null);
-              await refresh();
-            }}
-          />
+          <SettingsSheet onClose={() => setPresetSet(null)}>
+            <PresetPicker
+              vehicles={vehicles}
+              presets={presetSet === "tacoma2024" ? TACOMA_2024_PRESETS : MAINTENANCE_PRESETS}
+              title={presetSet === "tacoma2024" ? "2024 Tacoma schedule" : "Quick add common services"}
+              description={
+                presetSet === "tacoma2024"
+                  ? "Pulled directly from Toyota's official 2024 Tacoma Warranty & Maintenance Guide (normal driving conditions). Items only scheduled under towing/dirt-road conditions were left out rather than guessed at."
+                  : "General guidelines to start from — check each vehicle's owner's manual for exact intervals, then edit or delete any of these later."
+              }
+              onClose={() => setPresetSet(null)}
+              onSaved={async () => {
+                setPresetSet(null);
+                await refresh();
+              }}
+            />
+          </SettingsSheet>
         )}
       </section>
     </main>
@@ -366,7 +387,7 @@ function VehicleForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
   }
 
   return (
-    <form onSubmit={save} className="glass-panel rounded-3xl p-5 flex flex-col gap-3.5 mt-1">
+    <form onSubmit={save} className="flex flex-col gap-3.5">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold">New vehicle</p>
         <button type="button" onClick={onClose} className="text-muted">
@@ -472,7 +493,7 @@ function PresetPicker({
   }
 
   return (
-    <div className="glass-panel rounded-3xl p-5 flex flex-col gap-3.5 mt-1">
+    <div className="flex flex-col gap-3.5">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold">{title}</p>
         <button type="button" onClick={onClose} className="text-muted">
@@ -593,7 +614,7 @@ function TypeForm({
   }
 
   return (
-    <form onSubmit={save} className="glass-panel rounded-3xl p-5 flex flex-col gap-3.5 mt-1">
+    <form onSubmit={save} className="flex flex-col gap-3.5">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold">{editingType ? "Edit maintenance type" : "New maintenance type"}</p>
         <button type="button" onClick={onClose} className="text-muted">
