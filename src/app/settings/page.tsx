@@ -2,10 +2,10 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, Trash2, Car, Truck, LogOut, X, FileText, Upload, ChevronUp, ChevronDown } from "lucide-react";
+import { Loader2, Plus, Trash2, Pencil, Car, Truck, LogOut, X, FileText, Upload, ChevronUp, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useGarageData } from "@/lib/useGarageData";
-import { MAINTENANCE_CATEGORIES, MAINTENANCE_PRESETS, TACOMA_2024_PRESETS, type MaintenancePreset } from "@/lib/types";
+import { MAINTENANCE_CATEGORIES, MAINTENANCE_PRESETS, TACOMA_2024_PRESETS, type MaintenancePreset, type MaintenanceType } from "@/lib/types";
 
 const ICON_OPTIONS: { value: string; icon: typeof Car }[] = [
   { value: "truck", icon: Truck },
@@ -19,6 +19,7 @@ export default function SettingsPage() {
   const { vehicles, types, loading, refresh } = useGarageData();
   const [addingVehicle, setAddingVehicle] = useState(false);
   const [addingTypeFor, setAddingTypeFor] = useState<string | "all" | null>(null);
+  const [editingType, setEditingType] = useState<MaintenanceType | null>(null);
   const [presetSet, setPresetSet] = useState<"generic" | "tacoma2024" | null>(null);
   const [manualBusyFor, setManualBusyFor] = useState<string | null>(null);
   const manualInputRef = useRef<HTMLInputElement>(null);
@@ -129,7 +130,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="flex-1 px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-40 flex flex-col gap-7">
+    <main className="flex-1 px-5 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-40 flex flex-col gap-7">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-medium tracking-[0.14em] uppercase text-muted">Garage</p>
@@ -235,29 +236,30 @@ export default function SettingsPage() {
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-sm font-semibold text-muted">Maintenance types</h3>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setPresetSet("tacoma2024")}
-              className="text-sm font-medium text-accent"
-              disabled={vehicles.length === 0}
-            >
-              2024 Tacoma
-            </button>
-            <button
-              onClick={() => setPresetSet("generic")}
-              className="text-sm font-medium text-accent"
-              disabled={vehicles.length === 0}
-            >
-              Quick add
-            </button>
-            <button
-              onClick={() => setAddingTypeFor("all")}
-              className="text-sm font-medium text-accent flex items-center gap-1"
-              disabled={vehicles.length === 0}
-            >
-              <Plus className="w-4 h-4" /> Add
-            </button>
-          </div>
+          <button
+            onClick={() => setAddingTypeFor("all")}
+            className="text-sm font-medium text-accent flex items-center gap-1"
+            disabled={vehicles.length === 0}
+          >
+            <Plus className="w-4 h-4" /> Add
+          </button>
+        </div>
+
+        <div className="flex gap-2 px-1">
+          <button
+            onClick={() => setPresetSet("tacoma2024")}
+            className="glass-panel rounded-full px-3.5 py-1.5 text-xs font-medium text-accent disabled:opacity-40"
+            disabled={vehicles.length === 0}
+          >
+            2024 Tacoma preset
+          </button>
+          <button
+            onClick={() => setPresetSet("generic")}
+            className="glass-panel rounded-full px-3.5 py-1.5 text-xs font-medium text-accent disabled:opacity-40"
+            disabled={vehicles.length === 0}
+          >
+            Quick add
+          </button>
         </div>
 
         <div className="flex flex-col gap-2.5">
@@ -274,7 +276,10 @@ export default function SettingsPage() {
                   {t.vehicle_id ? vehicles.find((v) => v.id === t.vehicle_id)?.name ?? "Vehicle" : "All vehicles"}
                 </p>
               </div>
-              <button onClick={() => deleteType(t.id)} className="text-muted p-2">
+              <button onClick={() => setEditingType(t)} className="text-muted p-2" aria-label={`Edit ${t.name}`}>
+                <Pencil className="w-4 h-4" />
+              </button>
+              <button onClick={() => deleteType(t.id)} className="text-muted p-2" aria-label={`Delete ${t.name}`}>
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
@@ -287,6 +292,18 @@ export default function SettingsPage() {
             onClose={() => setAddingTypeFor(null)}
             onSaved={async () => {
               setAddingTypeFor(null);
+              await refresh();
+            }}
+          />
+        )}
+
+        {editingType && (
+          <TypeForm
+            vehicles={vehicles}
+            editingType={editingType}
+            onClose={() => setEditingType(null)}
+            onSaved={async () => {
+              setEditingType(null);
               await refresh();
             }}
           />
@@ -522,38 +539,55 @@ function PresetPicker({
 
 function TypeForm({
   vehicles,
+  editingType,
   onClose,
   onSaved,
 }: {
   vehicles: { id: string; name: string }[];
+  editingType?: MaintenanceType;
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState<(typeof MAINTENANCE_CATEGORIES)[number]["value"]>("custom");
-  const [intervalMiles, setIntervalMiles] = useState("");
-  const [intervalDays, setIntervalDays] = useState("");
-  const [scope, setScope] = useState<string>("");
+  const [name, setName] = useState(editingType?.name ?? "");
+  const [category, setCategory] = useState<(typeof MAINTENANCE_CATEGORIES)[number]["value"]>(editingType?.category ?? "custom");
+  const [intervalMiles, setIntervalMiles] = useState(editingType?.interval_miles != null ? String(editingType.interval_miles) : "");
+  const [intervalDays, setIntervalDays] = useState(editingType?.interval_days != null ? String(editingType.interval_days) : "");
+  const [scope, setScope] = useState<string>(editingType?.vehicle_id ?? "");
   const [saving, setSaving] = useState(false);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
     const catMeta = MAINTENANCE_CATEGORIES.find((c) => c.value === category);
-    await supabase.from("maintenance_types").insert({
-      user_id: user.id,
-      vehicle_id: scope || null,
-      name: name || catMeta?.label,
-      category,
-      icon: catMeta?.icon ?? "wrench",
-      interval_miles: intervalMiles ? Number(intervalMiles) : null,
-      interval_days: intervalDays ? Number(intervalDays) : null,
-    });
+
+    if (editingType) {
+      await supabase
+        .from("maintenance_types")
+        .update({
+          vehicle_id: scope || null,
+          name: name || catMeta?.label,
+          category,
+          icon: catMeta?.icon ?? "wrench",
+          interval_miles: intervalMiles ? Number(intervalMiles) : null,
+          interval_days: intervalDays ? Number(intervalDays) : null,
+        })
+        .eq("id", editingType.id);
+    } else {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      await supabase.from("maintenance_types").insert({
+        user_id: user.id,
+        vehicle_id: scope || null,
+        name: name || catMeta?.label,
+        category,
+        icon: catMeta?.icon ?? "wrench",
+        interval_miles: intervalMiles ? Number(intervalMiles) : null,
+        interval_days: intervalDays ? Number(intervalDays) : null,
+      });
+    }
     setSaving(false);
     onSaved();
   }
@@ -561,7 +595,7 @@ function TypeForm({
   return (
     <form onSubmit={save} className="glass-panel rounded-3xl p-5 flex flex-col gap-3.5 mt-1">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold">New maintenance type</p>
+        <p className="text-sm font-semibold">{editingType ? "Edit maintenance type" : "New maintenance type"}</p>
         <button type="button" onClick={onClose} className="text-muted">
           <X className="w-4 h-4" />
         </button>
@@ -602,7 +636,7 @@ function TypeForm({
 
       <button type="submit" disabled={saving} className="btn-accent rounded-2xl py-3 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60">
         {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-        Save type
+        {editingType ? "Save changes" : "Save type"}
       </button>
     </form>
   );
