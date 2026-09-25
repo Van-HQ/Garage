@@ -89,38 +89,57 @@ create policy "mileage_logs are owned by user" on mileage_logs
 -- mileage_at, recorded_at vs performed_at), so each needs its own function —
 -- a single shared function referencing the wrong column name on either table
 -- throws "record new has no field ..." and silently rolls back the insert.
-create or replace function bump_vehicle_mileage_from_mileage_log()
-returns trigger as $$
+-- The vehicle's odometer is always derived from its newest log (by date), so
+-- editing or deleting a bad entry corrects it. (The old version only ever
+-- ratcheted upward with greatest(), so one typo'd mileage stuck forever.)
+-- If a vehicle has no logs at all, its manually-entered mileage is left alone.
+create or replace function recompute_vehicle_mileage(vid uuid)
+returns void as $$
+declare
+  latest record;
 begin
-  update vehicles
-    set current_mileage = greatest(current_mileage, new.mileage),
-        mileage_updated_at = new.recorded_at
-    where id = new.vehicle_id and new.mileage >= current_mileage;
-  return new;
-end;
-$$ language plpgsql security definer;
+  select mileage, at into latest from (
+    select mileage_at as mileage, performed_at as at from maintenance_logs where vehicle_id = vid
+    union all
+    select mileage, recorded_at as at from mileage_logs where vehicle_id = vid
+  ) readings
+  order by at desc, mileage desc
+  limit 1;
 
-create or replace function bump_vehicle_mileage_from_maintenance_log()
+  if found then
+    update vehicles set current_mileage = latest.mileage, mileage_updated_at = latest.at where id = vid;
+  end if;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+create or replace function trg_recompute_vehicle_mileage()
 returns trigger as $$
 begin
-  update vehicles
-    set current_mileage = greatest(current_mileage, new.mileage_at),
-        mileage_updated_at = new.performed_at
-    where id = new.vehicle_id and new.mileage_at >= current_mileage;
-  return new;
+  if tg_op in ('UPDATE', 'DELETE') then
+    perform recompute_vehicle_mileage(old.vehicle_id);
+  end if;
+  if tg_op in ('INSERT', 'UPDATE') then
+    perform recompute_vehicle_mileage(new.vehicle_id);
+  end if;
+  return null;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public;
 
 drop trigger if exists trg_bump_vehicle_mileage on mileage_logs;
-create trigger trg_bump_vehicle_mileage
-  after insert on mileage_logs
-  for each row execute function bump_vehicle_mileage_from_mileage_log();
-
 drop trigger if exists trg_bump_vehicle_mileage_maint on maintenance_logs;
-create trigger trg_bump_vehicle_mileage_maint
-  after insert on maintenance_logs
-  for each row execute function bump_vehicle_mileage_from_maintenance_log();
+drop trigger if exists trg_recompute_mileage_from_mileage_logs on mileage_logs;
+drop trigger if exists trg_recompute_mileage_from_maintenance_logs on maintenance_logs;
 
+create trigger trg_recompute_mileage_from_mileage_logs
+  after insert or update or delete on mileage_logs
+  for each row execute function trg_recompute_vehicle_mileage();
+
+create trigger trg_recompute_mileage_from_maintenance_logs
+  after insert or update or delete on maintenance_logs
+  for each row execute function trg_recompute_vehicle_mileage();
+
+drop function if exists bump_vehicle_mileage_from_mileage_log();
+drop function if exists bump_vehicle_mileage_from_maintenance_log();
 drop function if exists bump_vehicle_mileage();
 
 create index if not exists idx_maintenance_logs_vehicle on maintenance_logs(vehicle_id, performed_at desc);
