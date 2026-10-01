@@ -50,3 +50,27 @@ export function computeMonthlyMiles(points: TrendPoint[], limit = 6): MonthlyMil
 
   return result.slice(-limit);
 }
+
+export type MonthlyStat = MonthlyMiles & {
+  /** Miles driven minus the previous month's miles; null for the first month on record. */
+  changeMiles: number | null;
+  /** changeMiles as a % of the previous month's miles; null when there is no (or a zero) previous month. */
+  changePct: number | null;
+};
+
+/** Monthly miles with month-over-month change, newest month first. */
+export function computeMonthlyStats(points: TrendPoint[], limit = 6): MonthlyStat[] {
+  const all = computeMonthlyMiles(points, Number.MAX_SAFE_INTEGER);
+  return all
+    .map((m, i): MonthlyStat => {
+      const prev = all[i - 1];
+      if (!prev) return { ...m, changeMiles: null, changePct: null };
+      return {
+        ...m,
+        changeMiles: m.miles - prev.miles,
+        changePct: prev.miles > 0 ? Math.round(((m.miles - prev.miles) / prev.miles) * 100) : null,
+      };
+    })
+    .slice(-limit)
+    .reverse();
+}
