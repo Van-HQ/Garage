@@ -2,10 +2,10 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, Trash2, Pencil, Car, Truck, LogOut, X, FileText, Upload, ChevronUp, ChevronDown } from "lucide-react";
+import { Loader2, Plus, Trash2, Pencil, Gauge, Car, Truck, LogOut, X, FileText, Upload, ChevronUp, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useGarageData } from "@/lib/useGarageData";
-import { MAINTENANCE_CATEGORIES, MAINTENANCE_PRESETS, TACOMA_2024_PRESETS, type MaintenancePreset, type MaintenanceType } from "@/lib/types";
+import { MAINTENANCE_CATEGORIES, MAINTENANCE_PRESETS, TACOMA_2024_PRESETS, type MaintenancePreset, type MaintenanceType, type Vehicle } from "@/lib/types";
 
 const ICON_OPTIONS: { value: string; icon: typeof Car }[] = [
   { value: "truck", icon: Truck },
@@ -31,6 +31,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const { vehicles, types, loading, refresh } = useGarageData();
   const [addingVehicle, setAddingVehicle] = useState(false);
+  const [settingOdometerFor, setSettingOdometerFor] = useState<Vehicle | null>(null);
   const [addingTypeFor, setAddingTypeFor] = useState<string | "all" | null>(null);
   const [editingType, setEditingType] = useState<MaintenanceType | null>(null);
   const [presetSet, setPresetSet] = useState<"generic" | "tacoma2024" | null>(null);
@@ -227,12 +228,34 @@ export default function SettingsPage() {
                 </button>
               )}
 
+              <button
+                onClick={() => setSettingOdometerFor(v)}
+                className="text-muted p-2 shrink-0"
+                aria-label={`Set ${v.name} odometer`}
+                title="Set odometer"
+              >
+                <Gauge className="w-4 h-4" />
+              </button>
+
               <button onClick={() => deleteVehicle(v.id)} className="text-muted p-2 shrink-0">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
           ))}
         </div>
+
+        {settingOdometerFor && (
+          <SettingsSheet onClose={() => setSettingOdometerFor(null)}>
+            <OdometerForm
+              vehicle={settingOdometerFor}
+              onClose={() => setSettingOdometerFor(null)}
+              onSaved={async () => {
+                setSettingOdometerFor(null);
+                await refresh();
+              }}
+            />
+          </SettingsSheet>
+        )}
 
         {addingVehicle && (
           <SettingsSheet onClose={() => setAddingVehicle(false)}>
@@ -349,6 +372,67 @@ export default function SettingsPage() {
         )}
       </section>
     </main>
+  );
+}
+
+/**
+ * Corrects a vehicle's odometer by logging a fresh reading dated right now.
+ * The DB derives vehicles.current_mileage from the newest log, so this takes
+ * effect immediately and resets the projection baseline.
+ */
+function OdometerForm({ vehicle, onClose, onSaved }: { vehicle: Vehicle; onClose: () => void; onSaved: () => void }) {
+  const [mileage, setMileage] = useState(String(vehicle.current_mileage));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    const value = Number(mileage);
+    if (!Number.isFinite(value) || value < 0) {
+      setError("Enter a valid mileage.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setSaving(false);
+      return;
+    }
+    const { error: insertError } = await supabase.from("mileage_logs").insert({
+      user_id: user.id,
+      vehicle_id: vehicle.id,
+      mileage: Math.round(value),
+      note: "Odometer correction",
+      recorded_at: new Date().toISOString(),
+    });
+    setSaving(false);
+    if (insertError) {
+      setError(insertError.message);
+      return;
+    }
+    onSaved();
+  }
+
+  return (
+    <form onSubmit={save} className="flex flex-col gap-3.5">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold">Set odometer · {vehicle.name}</p>
+        <button type="button" onClick={onClose} className="text-muted">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      <Field label="Actual odometer reading" value={mileage} onChange={setMileage} type="number" />
+      <p className="text-xs text-muted">Saves a new reading dated now, so it becomes the truck&apos;s current mileage.</p>
+      {error && <p className="text-xs text-red-400">{error}</p>}
+      <button type="submit" disabled={saving} className="btn-accent rounded-2xl py-3 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60">
+        {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+        Save odometer
+      </button>
+    </form>
   );
 }
 
