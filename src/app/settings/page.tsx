@@ -34,6 +34,7 @@ export default function SettingsPage() {
   const [showAllReadings, setShowAllReadings] = useState(false);
   const [addingVehicle, setAddingVehicle] = useState(false);
   const [settingOdometerFor, setSettingOdometerFor] = useState<Vehicle | null>(null);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [addingTypeFor, setAddingTypeFor] = useState<string | "all" | null>(null);
   const [editingType, setEditingType] = useState<MaintenanceType | null>(null);
   const [presetSet, setPresetSet] = useState<"generic" | "tacoma2024" | null>(null);
@@ -260,6 +261,15 @@ export default function SettingsPage() {
               )}
 
               <button
+                onClick={() => setEditingVehicle(v)}
+                className="text-muted p-2 shrink-0"
+                aria-label={`Edit ${v.name}`}
+                title="Edit vehicle"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+
+              <button
                 onClick={() => setSettingOdometerFor(v)}
                 className="text-muted p-2 shrink-0"
                 aria-label={`Set ${v.name} odometer`}
@@ -282,6 +292,19 @@ export default function SettingsPage() {
               onClose={() => setSettingOdometerFor(null)}
               onSaved={async () => {
                 setSettingOdometerFor(null);
+                await refresh();
+              }}
+            />
+          </SettingsSheet>
+        )}
+
+        {editingVehicle && (
+          <SettingsSheet onClose={() => setEditingVehicle(null)}>
+            <VehicleForm
+              vehicle={editingVehicle}
+              onClose={() => setEditingVehicle(null)}
+              onSaved={async () => {
+                setEditingVehicle(null);
                 await refresh();
               }}
             />
@@ -517,21 +540,38 @@ function OdometerForm({ vehicle, onClose, onSaved }: { vehicle: Vehicle; onClose
   );
 }
 
-function VehicleForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [name, setName] = useState("");
-  const [make, setMake] = useState("Toyota");
-  const [model, setModel] = useState("");
-  const [year, setYear] = useState(new Date().getFullYear());
+/** Creates a vehicle, or edits one when `vehicle` is given (mileage is changed via Set odometer instead). */
+function VehicleForm({ vehicle, onClose, onSaved }: { vehicle?: Vehicle; onClose: () => void; onSaved: () => void }) {
+  const [name, setName] = useState(vehicle?.name ?? "");
+  const [make, setMake] = useState(vehicle?.make ?? "Toyota");
+  const [model, setModel] = useState(vehicle?.model ?? "");
+  const [year, setYear] = useState(vehicle?.year ?? new Date().getFullYear());
   const [mileage, setMileage] = useState("0");
-  const [avgDaily, setAvgDaily] = useState("25");
-  const [icon, setIcon] = useState("truck");
-  const [color, setColor] = useState(ACCENT_OPTIONS[0]);
+  const [avgDaily, setAvgDaily] = useState(String(vehicle?.avg_daily_miles ?? 25));
+  const [icon, setIcon] = useState(vehicle?.icon ?? "truck");
+  const [color, setColor] = useState(vehicle?.color ?? ACCENT_OPTIONS[0]);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    setError(null);
     const supabase = createClient();
+    if (vehicle) {
+      const { data: updated, error: updateError } = await supabase
+        .from("vehicles")
+        .update({ name, make, model, year: Number(year), avg_daily_miles: Number(avgDaily), icon, color })
+        .eq("id", vehicle.id)
+        .select("id");
+      setSaving(false);
+      if (updateError || !updated?.length) {
+        setError(updateError?.message ?? "Couldn't save changes. Try again.");
+        return;
+      }
+      onSaved();
+      return;
+    }
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -554,7 +594,7 @@ function VehicleForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
   return (
     <form onSubmit={save} className="flex flex-col gap-3.5">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold">New vehicle</p>
+        <p className="text-sm font-semibold">{vehicle ? "Edit vehicle" : "New vehicle"}</p>
         <button type="button" onClick={onClose} className="text-muted">
           <X className="w-4 h-4" />
         </button>
@@ -593,13 +633,14 @@ function VehicleForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
       </div>
       <Field label="Model" value={model} onChange={setModel} placeholder="Tacoma TRD Off-Road" />
       <div className="flex gap-3 min-w-0">
-        <Field label="Current mileage" value={mileage} onChange={setMileage} type="number" />
+        {!vehicle && <Field label="Current mileage" value={mileage} onChange={setMileage} type="number" />}
         <Field label="Avg mi/day" value={avgDaily} onChange={setAvgDaily} type="number" />
       </div>
 
+      {error && <p className="text-xs text-red-400">{error}</p>}
       <button type="submit" disabled={saving} className="btn-accent rounded-2xl py-3 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60">
         {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-        Save vehicle
+        {vehicle ? "Save changes" : "Save vehicle"}
       </button>
     </form>
   );
