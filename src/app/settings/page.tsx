@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Plus, Trash2, Pencil, Gauge, Car, Truck, LogOut, X, FileText, Upload, ChevronUp, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useGarageData } from "@/lib/useGarageData";
-import { MAINTENANCE_CATEGORIES, MAINTENANCE_PRESETS, TACOMA_2024_PRESETS, type MaintenancePreset, type MaintenanceType, type Vehicle } from "@/lib/types";
+import { MAINTENANCE_CATEGORIES, MAINTENANCE_PRESETS, TACOMA_2024_PRESETS, type MaintenancePreset, type MaintenanceType, type MileageLog, type Vehicle } from "@/lib/types";
 
 const ICON_OPTIONS: { value: string; icon: typeof Car }[] = [
   { value: "truck", icon: Truck },
@@ -29,7 +29,9 @@ function SettingsSheet({ onClose, children }: { onClose: () => void; children: R
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { vehicles, types, loading, refresh } = useGarageData();
+  const { vehicles, types, logs, mileageLogs, loading, refresh } = useGarageData();
+  const [readingError, setReadingError] = useState<string | null>(null);
+  const [showAllReadings, setShowAllReadings] = useState(false);
   const [addingVehicle, setAddingVehicle] = useState(false);
   const [settingOdometerFor, setSettingOdometerFor] = useState<Vehicle | null>(null);
   const [addingTypeFor, setAddingTypeFor] = useState<string | "all" | null>(null);
@@ -127,6 +129,35 @@ export default function SettingsPage() {
     await supabase.from("vehicles").update({ manual_uploaded_at: null }).eq("id", vehicleId);
     await refresh();
     setManualBusyFor(null);
+  }
+
+  /**
+   * Removes a mileage-only reading, then points the vehicle at its newest
+   * remaining reading. Done here rather than trusting the DB trigger, which
+   * (in older schema versions) only ever raised the odometer.
+   */
+  async function deleteMileageLog(log: MileageLog) {
+    setReadingError(null);
+    const supabase = createClient();
+    const { error } = await supabase.from("mileage_logs").delete().eq("id", log.id);
+    if (error) {
+      setReadingError(error.message);
+      return;
+    }
+    const remaining = [
+      ...mileageLogs
+        .filter((m) => m.vehicle_id === log.vehicle_id && m.id !== log.id)
+        .map((m) => ({ mileage: m.mileage, at: m.recorded_at })),
+      ...logs.filter((l) => l.vehicle_id === log.vehicle_id).map((l) => ({ mileage: l.mileage_at, at: l.performed_at })),
+    ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime() || b.mileage - a.mileage);
+    if (remaining[0]) {
+      const { error: updateError } = await supabase
+        .from("vehicles")
+        .update({ current_mileage: remaining[0].mileage, mileage_updated_at: remaining[0].at })
+        .eq("id", log.vehicle_id);
+      if (updateError) setReadingError(updateError.message);
+    }
+    await refresh();
   }
 
   async function deleteType(id: string) {
@@ -269,6 +300,42 @@ export default function SettingsPage() {
           </SettingsSheet>
         )}
       </section>
+
+      {/* Mileage readings */}
+      {mileageLogs.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <h3 className="text-sm font-semibold text-muted px-1">Mileage readings</h3>
+          <p className="text-xs text-muted px-1 -mt-1">Odometer check-ins, newest first. Delete one that&apos;s wrong.</p>
+          {readingError && <p className="text-xs text-red-400 px-1">{readingError}</p>}
+          <div className="list-panel">
+            {(showAllReadings ? mileageLogs : mileageLogs.slice(0, 8)).map((m) => (
+              <div key={m.id} className="list-row">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px] font-medium truncate">{m.mileage.toLocaleString()} mi</p>
+                  <p className="text-xs text-muted truncate">
+                    {vehicles.find((v) => v.id === m.vehicle_id)?.name ?? "Vehicle"} ·{" "}
+                    {new Date(m.recorded_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                    {m.note ? ` · ${m.note}` : ""}
+                  </p>
+                </div>
+                <button
+                  onClick={() => deleteMileageLog(m)}
+                  className="text-muted p-2 shrink-0"
+                  aria-label="Delete reading"
+                  title="Delete reading"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+          {mileageLogs.length > 8 && (
+            <button onClick={() => setShowAllReadings((s) => !s)} className="text-sm font-medium text-accent self-start px-1">
+              {showAllReadings ? "Show fewer" : `Show all ${mileageLogs.length}`}
+            </button>
+          )}
+        </section>
+      )}
 
       {/* Maintenance types */}
       <section className="flex flex-col gap-3">
