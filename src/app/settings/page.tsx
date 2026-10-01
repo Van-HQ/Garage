@@ -402,16 +402,30 @@ function OdometerForm({ vehicle, onClose, onSaved }: { vehicle: Vehicle; onClose
       setSaving(false);
       return;
     }
+    const now = new Date().toISOString();
+    const miles = Math.round(value);
     const { error: insertError } = await supabase.from("mileage_logs").insert({
       user_id: user.id,
       vehicle_id: vehicle.id,
-      mileage: Math.round(value),
+      mileage: miles,
       note: "Odometer correction",
-      recorded_at: new Date().toISOString(),
+      recorded_at: now,
     });
-    setSaving(false);
     if (insertError) {
+      setSaving(false);
       setError(insertError.message);
+      return;
+    }
+    // Write the vehicle directly too: depending on which version of the
+    // mileage trigger the database has, a log alone may only ever raise it.
+    const { data: updated, error: updateError } = await supabase
+      .from("vehicles")
+      .update({ current_mileage: miles, mileage_updated_at: now })
+      .eq("id", vehicle.id)
+      .select("id");
+    setSaving(false);
+    if (updateError || !updated?.length) {
+      setError(updateError?.message ?? "Couldn't update the vehicle. Try again.");
       return;
     }
     onSaved();
