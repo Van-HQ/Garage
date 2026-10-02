@@ -8,6 +8,7 @@ import { computeMaintenanceStatus } from "@/lib/maintenance-status";
 import { usePhotoUrls } from "@/lib/usePhotoUrls";
 import { MAINTENANCE_ICONS } from "@/lib/maintenance-icons";
 import VehicleSwiper from "@/components/VehicleSwiper";
+import StatsCard from "@/components/StatsCard";
 import StatusRow from "@/components/StatusRow";
 import EditEntryModal from "@/components/EditEntryModal";
 
@@ -68,6 +69,8 @@ export default function HomePage() {
       </div>
 
       <VehicleSwiper vehicles={vehicles} types={types} logs={logs} mileageLogs={mileageLogs} onIndexChange={setIndex} />
+
+      {vehicle && <StatsCard vehicle={vehicle} logs={logs} mileageLogs={mileageLogs} />}
 
       {vehicle && (
         <div className="flex flex-col gap-3">
