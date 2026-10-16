@@ -60,6 +60,18 @@ export type MileageLog = {
   created_at: string;
 };
 
+/**
+ * "Gas" is a built-in Type-dropdown option rather than a maintenance_types row:
+ * fill-ups have no service interval, so they're saved as an ordinary
+ * maintenance_logs entry with no type and this fixed title.
+ */
+export const GAS_TYPE_VALUE = "__gas";
+export const GAS_TITLE = "Gas";
+
+export function isGasLog(log: Pick<MaintenanceLog, "maintenance_type_id" | "title">): boolean {
+  return log.maintenance_type_id === null && log.title === GAS_TITLE;
+}
+
 export const MAINTENANCE_CATEGORIES: { value: MaintenanceType["category"]; label: string; icon: string }[] = [
   { value: "oil", label: "Oil Change", icon: "droplet" },
   { value: "tires", label: "Tires", icon: "circle-dot" },

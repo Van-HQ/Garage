@@ -6,6 +6,7 @@ import { Loader2, CheckCircle2, Gauge, Wrench, Camera, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useGarageData } from "@/lib/useGarageData";
 import { projectedMileage } from "@/lib/maintenance-status";
+import { GAS_TITLE, GAS_TYPE_VALUE } from "@/lib/types";
 
 type Mode = "maintenance" | "mileage";
 
@@ -103,14 +104,15 @@ function LogPageInner() {
     const performedAt = new Date(date + "T12:00:00").toISOString();
 
     if (mode === "maintenance") {
+      const isGas = typeId === GAS_TYPE_VALUE;
       const type = vehicleTypes.find((t) => t.id === typeId);
       const { data: inserted, error: insertError } = await supabase
         .from("maintenance_logs")
         .insert({
           user_id: user.id,
           vehicle_id: vehicle.id,
-          maintenance_type_id: typeId || null,
-          title: type?.name ?? "Maintenance",
+          maintenance_type_id: isGas ? null : typeId || null,
+          title: isGas ? GAS_TITLE : (type?.name ?? "Maintenance"),
           notes,
           cost: cost ? Number(cost) : null,
           mileage_at: Number(mileage),
@@ -250,6 +252,7 @@ function LogPageInner() {
                     {t.name}
                   </option>
                 ))}
+                <option value={GAS_TYPE_VALUE}>{GAS_TITLE}</option>
               </select>
             </label>
           )}
@@ -293,7 +296,7 @@ function LogPageInner() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              placeholder="Synthetic 5W-30, rotated tires too..."
+              placeholder={typeId === GAS_TYPE_VALUE ? "12.4 gal, Costco..." : "Synthetic 5W-30, rotated tires too..."}
               className="form-field resize-none"
             />
           </label>

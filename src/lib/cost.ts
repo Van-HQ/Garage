@@ -1,5 +1,5 @@
 import type { MaintenanceLog, MaintenanceType } from "@/lib/types";
-import { MAINTENANCE_CATEGORIES } from "@/lib/types";
+import { MAINTENANCE_CATEGORIES, isGasLog } from "@/lib/types";
 
 export type CostBreakdown = {
   total: number;
@@ -26,14 +26,14 @@ export function computeCostBreakdown(
     total += amount;
     if (new Date(log.performed_at).getFullYear() === currentYear) thisYearTotal += amount;
 
-    const category = typeById.get(log.maintenance_type_id ?? "")?.category ?? "custom";
+    const category = isGasLog(log) ? "gas" : (typeById.get(log.maintenance_type_id ?? "")?.category ?? "custom");
     byCategoryMap.set(category, (byCategoryMap.get(category) ?? 0) + amount);
   }
 
   const byCategory = Array.from(byCategoryMap.entries())
     .map(([category, amount]) => ({
       category,
-      label: MAINTENANCE_CATEGORIES.find((c) => c.value === category)?.label ?? "Other",
+      label: category === "gas" ? "Gas" : (MAINTENANCE_CATEGORIES.find((c) => c.value === category)?.label ?? "Other"),
       amount,
     }))
     .sort((a, b) => b.amount - a.amount);
