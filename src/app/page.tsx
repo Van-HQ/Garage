@@ -7,6 +7,7 @@ import { useGarageData } from "@/lib/useGarageData";
 import { computeMaintenanceStatus } from "@/lib/maintenance-status";
 import { usePhotoUrls } from "@/lib/usePhotoUrls";
 import { MAINTENANCE_ICONS } from "@/lib/maintenance-icons";
+import { isGasLog } from "@/lib/types";
 import VehicleSwiper from "@/components/VehicleSwiper";
 import StatsCard from "@/components/StatsCard";
 import StatusRow from "@/components/StatusRow";
@@ -105,7 +106,7 @@ export default function HomePage() {
           <div className="list-panel">
             {recent.map((log) => {
               const type = types.find((t) => t.id === log.maintenance_type_id);
-              const Icon = MAINTENANCE_ICONS[type?.icon ?? "wrench"] ?? MAINTENANCE_ICONS.wrench;
+              const Icon = MAINTENANCE_ICONS[isGasLog(log) ? "fuel" : (type?.icon ?? "wrench")] ?? MAINTENANCE_ICONS.wrench;
               const photo = photos.find((p) => p.maintenance_log_id === log.id);
               const thumbUrl = photo ? photoUrls[photo.storage_path] : undefined;
 

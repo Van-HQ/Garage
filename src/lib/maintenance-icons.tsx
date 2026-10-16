@@ -1,4 +1,4 @@
-import { Droplet, CircleDot, Sparkles, Wand2, ClipboardCheck, Wrench } from "lucide-react";
+import { Droplet, CircleDot, Sparkles, Wand2, ClipboardCheck, Wrench, Fuel } from "lucide-react";
 
 export const MAINTENANCE_ICONS: Record<string, typeof Wrench> = {
   droplet: Droplet,
@@ -7,4 +7,5 @@ export const MAINTENANCE_ICONS: Record<string, typeof Wrench> = {
   "wand-2": Wand2,
   "clipboard-check": ClipboardCheck,
   wrench: Wrench,
+  fuel: Fuel,
 };

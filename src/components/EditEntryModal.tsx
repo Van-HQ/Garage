@@ -5,6 +5,7 @@ import { Loader2, Camera, X, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { usePhotoUrls } from "@/lib/usePhotoUrls";
 import type { MaintenanceLog, MaintenancePhoto, MaintenanceType } from "@/lib/types";
+import { GAS_TITLE, GAS_TYPE_VALUE, isGasLog } from "@/lib/types";
 
 type PendingPhoto = { file: File; previewUrl: string };
 
@@ -22,7 +23,7 @@ export default function EditEntryModal({
   onSaved: () => Promise<void> | void;
 }) {
   const vehicleTypes = types.filter((t) => t.vehicle_id === null || t.vehicle_id === log.vehicle_id);
-  const [typeId, setTypeId] = useState(log.maintenance_type_id ?? "");
+  const [typeId, setTypeId] = useState(isGasLog(log) ? GAS_TYPE_VALUE : (log.maintenance_type_id ?? ""));
   const [mileage, setMileage] = useState(String(log.mileage_at));
   const [date, setDate] = useState(log.performed_at.slice(0, 10));
   const [cost, setCost] = useState(log.cost != null ? String(log.cost) : "");
@@ -66,12 +67,13 @@ export default function EditEntryModal({
       return;
     }
 
+    const isGas = typeId === GAS_TYPE_VALUE;
     const type = vehicleTypes.find((t) => t.id === typeId);
     const { error: updateError } = await supabase
       .from("maintenance_logs")
       .update({
-        maintenance_type_id: typeId || null,
-        title: type?.name ?? log.title,
+        maintenance_type_id: isGas ? null : typeId || null,
+        title: isGas ? GAS_TITLE : (type?.name ?? log.title),
         notes,
         cost: cost ? Number(cost) : null,
         mileage_at: Number(mileage),
@@ -139,6 +141,7 @@ export default function EditEntryModal({
                   {t.name}
                 </option>
               ))}
+              <option value={GAS_TYPE_VALUE}>{GAS_TITLE}</option>
             </select>
           </label>
 
