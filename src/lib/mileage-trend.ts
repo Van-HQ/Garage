@@ -23,29 +23,31 @@ export function computeMileageTrend(
 export type MonthlyMiles = { label: string; fullLabel: string; miles: number };
 
 /**
- * Miles driven per calendar month, derived by diffing the last known odometer
- * reading of each month against the last reading of the month before it.
- * Months with no reading at all are simply absent rather than estimated.
+ * Miles driven per calendar month. Each stretch between two consecutive
+ * readings is credited to the month its midpoint falls in, so a reading taken
+ * on Aug 1 closes out July rather than starting August (and one taken Jul 31
+ * still counts for July). Months with no stretch landing in them are simply
+ * absent rather than estimated.
  */
 export function computeMonthlyMiles(points: TrendPoint[], limit = 6): MonthlyMiles[] {
   if (points.length < 2) return [];
 
-  const lastReadingByMonth = new Map<string, number>();
-  for (const p of points) {
-    const d = new Date(p.date);
-    lastReadingByMonth.set(`${d.getFullYear()}-${d.getMonth()}`, p.mileage);
+  // Points are chronological, so midpoints are too and Map order is month order.
+  const milesByMonth = new Map<string, number>();
+  for (let i = 1; i < points.length; i++) {
+    const from = points[i - 1];
+    const to = points[i];
+    const mid = new Date((new Date(from.date).getTime() + new Date(to.date).getTime()) / 2);
+    const key = `${mid.getFullYear()}-${mid.getMonth()}`;
+    milesByMonth.set(key, (milesByMonth.get(key) ?? 0) + Math.max(0, to.mileage - from.mileage));
   }
 
-  const months = Array.from(lastReadingByMonth.entries());
   const result: MonthlyMiles[] = [];
-
-  for (let i = 1; i < months.length; i++) {
-    const [key, mileage] = months[i];
-    const [, prevMileage] = months[i - 1];
+  for (const [key, miles] of milesByMonth) {
     const [year, month] = key.split("-").map(Number);
     const label = new Date(year, month, 1).toLocaleDateString(undefined, { month: "short" });
     const fullLabel = new Date(year, month, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
-    result.push({ label, fullLabel, miles: Math.max(0, mileage - prevMileage) });
+    result.push({ label, fullLabel, miles });
   }
 
   return result.slice(-limit);
