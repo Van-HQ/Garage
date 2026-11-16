@@ -1,0 +1,12 @@
+// Build settings for the Garage iPhone app.
+// Supabase values and your signing team live in Config.local.xcconfig, which is
+// never committed. ./setup.sh creates it for you.
+
+GARAGE_BUNDLE_ID = com.vannostran.garage
+SUPABASE_HOST =
+SUPABASE_PUBLISHABLE_KEY =
+
+#include? "Config.local.xcconfig"
+
+PRODUCT_BUNDLE_IDENTIFIER = $(GARAGE_BUNDLE_ID)
+CODE_SIGN_STYLE = Automatic

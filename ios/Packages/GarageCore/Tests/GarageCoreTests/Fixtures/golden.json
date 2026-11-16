@@ -1,0 +1,1024 @@
+{
+  "now": "2026-11-15T20:30:00.000Z",
+  "vehicles": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "name": "Buddy",
+      "make": "Toyota",
+      "model": "Tacoma TRD Sport",
+      "year": 2024,
+      "color": "#e6d3c1",
+      "icon": "truck",
+      "current_mileage": 11400,
+      "manual_uploaded_at": "2026-08-20T18:00:00.000Z",
+      "mileage_updated_at": "2026-11-01T19:00:00.000Z",
+      "avg_daily_miles": 31.5,
+      "sort_order": 0,
+      "created_at": "2025-10-14T19:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "name": "RAV4",
+      "make": "Toyota",
+      "model": "RAV4 XLE",
+      "year": 2022,
+      "color": null,
+      "icon": "car",
+      "current_mileage": 41230,
+      "manual_uploaded_at": null,
+      "mileage_updated_at": "2026-11-20T19:00:00.000Z",
+      "avg_daily_miles": 22,
+      "sort_order": 1,
+      "created_at": "2024-03-02T19:00:00.000Z"
+    }
+  ],
+  "types": [
+    {
+      "id": "00000000-0000-4000-8000-000000000010",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": null,
+      "category": "oil",
+      "icon": "droplet",
+      "interval_miles": 10000,
+      "interval_days": 365,
+      "baseline_mileage": null,
+      "baseline_date": null,
+      "created_at": "2025-10-14T19:00:00.000Z",
+      "name": "Oil & Filter Change"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": null,
+      "category": "tires",
+      "icon": "circle-dot",
+      "interval_miles": 5000,
+      "interval_days": 180,
+      "baseline_mileage": null,
+      "baseline_date": null,
+      "created_at": "2025-10-14T19:00:00.000Z",
+      "name": "Tire Rotation"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000012",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": null,
+      "category": "wash",
+      "icon": "sparkles",
+      "interval_miles": null,
+      "interval_days": 14,
+      "baseline_mileage": null,
+      "baseline_date": null,
+      "created_at": "2025-10-14T19:00:00.000Z",
+      "name": "Car Wash"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000013",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "category": "inspection",
+      "icon": "wrench",
+      "interval_miles": null,
+      "interval_days": 365,
+      "baseline_mileage": 0,
+      "baseline_date": "2025-10-14T19:00:00.000Z",
+      "created_at": "2025-10-14T19:00:00.000Z",
+      "name": "Battery Check"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000014",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "category": "upgrade",
+      "icon": "wrench",
+      "interval_miles": null,
+      "interval_days": null,
+      "baseline_mileage": null,
+      "baseline_date": null,
+      "created_at": "2025-10-14T19:00:00.000Z",
+      "name": "Lift Kit"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000015",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": null,
+      "category": "custom",
+      "icon": "wrench",
+      "interval_miles": null,
+      "interval_days": null,
+      "baseline_mileage": null,
+      "baseline_date": null,
+      "created_at": "2025-10-14T19:00:00.000Z",
+      "name": "Wiper Blades"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000016",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": null,
+      "category": "custom",
+      "icon": "wrench",
+      "interval_miles": 12000,
+      "interval_days": null,
+      "baseline_mileage": 0,
+      "baseline_date": null,
+      "created_at": "2025-10-14T19:00:00.000Z",
+      "name": "Cabin Air Filter"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000017",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000002",
+      "category": "custom",
+      "icon": "wrench",
+      "interval_miles": 30000,
+      "interval_days": 730,
+      "baseline_mileage": null,
+      "baseline_date": null,
+      "created_at": "2025-10-14T19:00:00.000Z",
+      "name": "RAV4 Brake Fluid"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000018",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "category": "custom",
+      "icon": "wrench",
+      "interval_miles": null,
+      "interval_days": 30,
+      "baseline_mileage": null,
+      "baseline_date": null,
+      "created_at": "2025-10-14T19:00:00.000Z",
+      "name": "Half-day Check"
+    }
+  ],
+  "logs": [
+    {
+      "id": "00000000-0000-4000-8000-000000000100",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "maintenance_type_id": "00000000-0000-4000-8000-000000000010",
+      "title": "Oil & Filter Change",
+      "notes": "Dealer",
+      "cost": 74.5,
+      "mileage_at": 4980,
+      "performed_at": "2026-03-07T20:00:00.000Z",
+      "created_at": "2026-03-07T20:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000101",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "maintenance_type_id": "00000000-0000-4000-8000-000000000010",
+      "title": "Oil & Filter Change",
+      "notes": "",
+      "cost": 82,
+      "mileage_at": 9950,
+      "performed_at": "2026-09-12T19:00:00.000Z",
+      "created_at": "2026-09-12T19:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000102",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "maintenance_type_id": "00000000-0000-4000-8000-000000000010",
+      "title": "Oil & Filter Change",
+      "notes": "",
+      "cost": 0,
+      "mileage_at": 120,
+      "performed_at": "2025-10-20T19:00:00.000Z",
+      "created_at": "2025-10-20T19:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000103",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "maintenance_type_id": "00000000-0000-4000-8000-000000000011",
+      "title": "Tire Rotation",
+      "notes": "",
+      "cost": 25,
+      "mileage_at": 5100,
+      "performed_at": "2026-03-15T19:00:00.000Z",
+      "created_at": "2026-03-15T19:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000104",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "maintenance_type_id": "00000000-0000-4000-8000-000000000012",
+      "title": "Car Wash",
+      "notes": "",
+      "cost": 18,
+      "mileage_at": 11200,
+      "performed_at": "2026-10-25T19:00:00.000Z",
+      "created_at": "2026-10-25T19:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000105",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "maintenance_type_id": "00000000-0000-4000-8000-000000000012",
+      "title": "Car Wash",
+      "notes": "",
+      "cost": null,
+      "mileage_at": 11380,
+      "performed_at": "2026-11-01T19:00:00.000Z",
+      "created_at": "2026-11-01T19:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000106",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "maintenance_type_id": "00000000-0000-4000-8000-000000000014",
+      "title": "Lift Kit",
+      "notes": "2 inch",
+      "cost": 1899.99,
+      "mileage_at": 8000,
+      "performed_at": "2026-07-04T19:00:00.000Z",
+      "created_at": "2026-07-04T19:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000107",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "maintenance_type_id": null,
+      "title": "Windshield chip repair",
+      "notes": "",
+      "cost": 60,
+      "mileage_at": 8700,
+      "performed_at": "2026-08-01T06:30:00.000Z",
+      "created_at": "2026-08-01T06:30:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000108",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000002",
+      "maintenance_type_id": "00000000-0000-4000-8000-000000000010",
+      "title": "Oil & Filter Change",
+      "notes": "",
+      "cost": 65,
+      "mileage_at": 38000,
+      "performed_at": "2026-04-09T19:00:00.000Z",
+      "created_at": "2026-04-09T19:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000109",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000002",
+      "maintenance_type_id": "00000000-0000-4000-8000-000000000012",
+      "title": "Car Wash",
+      "notes": "",
+      "cost": 20,
+      "mileage_at": 41000,
+      "performed_at": "2026-10-26T19:00:00.000Z",
+      "created_at": "2026-10-26T19:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000110",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000002",
+      "maintenance_type_id": "00000000-0000-4000-8000-000000000017",
+      "title": "RAV4 Brake Fluid",
+      "notes": "",
+      "cost": 140,
+      "mileage_at": 21000,
+      "performed_at": "2024-11-16T08:30:00.000Z",
+      "created_at": "2024-11-16T08:30:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000111",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "maintenance_type_id": "00000000-0000-4000-8000-000000000018",
+      "title": "Half-day Check",
+      "notes": "",
+      "cost": null,
+      "mileage_at": 10800,
+      "performed_at": "2026-10-31T08:30:00.000Z",
+      "created_at": "2026-10-31T08:30:00.000Z"
+    }
+  ],
+  "mileageLogs": [
+    {
+      "id": "00000000-0000-4000-8000-000000000200",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "mileage": 0,
+      "note": "Purchase",
+      "recorded_at": "2025-10-14T19:00:00.000Z",
+      "created_at": "2025-10-14T19:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000201",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "mileage": 6900,
+      "note": "",
+      "recorded_at": "2026-05-31T19:00:00.000Z",
+      "created_at": "2026-05-31T19:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000202",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "mileage": 7400,
+      "note": "",
+      "recorded_at": "2026-06-30T19:00:00.000Z",
+      "created_at": "2026-06-30T19:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000203",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "mileage": 8650,
+      "note": "",
+      "recorded_at": "2026-07-31T23:00:00.000Z",
+      "created_at": "2026-07-31T23:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000204",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "mileage": 9400,
+      "note": "",
+      "recorded_at": "2026-08-31T19:00:00.000Z",
+      "created_at": "2026-08-31T19:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000205",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "mileage": 9390,
+      "note": "typo, lower than the last one",
+      "recorded_at": "2026-09-01T19:00:00.000Z",
+      "created_at": "2026-09-01T19:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000206",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000001",
+      "mileage": 11400,
+      "note": "",
+      "recorded_at": "2026-11-01T19:00:00.000Z",
+      "created_at": "2026-11-01T19:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000207",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000002",
+      "mileage": 39500,
+      "note": "",
+      "recorded_at": "2026-07-01T19:00:00.000Z",
+      "created_at": "2026-07-01T19:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000208",
+      "user_id": "00000000-0000-4000-8000-0000000000aa",
+      "vehicle_id": "00000000-0000-4000-8000-000000000002",
+      "mileage": 41230,
+      "note": "",
+      "recorded_at": "2026-11-20T19:00:00.000Z",
+      "created_at": "2026-11-20T19:00:00.000Z"
+    }
+  ],
+  "expected": {
+    "00000000-0000-4000-8000-000000000001": {
+      "projectedMileage": 11843,
+      "status": [
+        {
+          "typeId": "00000000-0000-4000-8000-000000000011",
+          "lastLogId": "00000000-0000-4000-8000-000000000103",
+          "dueMileage": 10100,
+          "dueDate": "2026-09-11T19:00:00.000Z",
+          "milesRemaining": -1743,
+          "daysRemaining": -65,
+          "status": "overdue"
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000012",
+          "lastLogId": "00000000-0000-4000-8000-000000000105",
+          "dueMileage": null,
+          "dueDate": "2026-11-15T19:00:00.000Z",
+          "milesRemaining": null,
+          "daysRemaining": 0,
+          "status": "overdue"
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000013",
+          "lastLogId": null,
+          "dueMileage": null,
+          "dueDate": "2026-10-14T19:00:00.000Z",
+          "milesRemaining": null,
+          "daysRemaining": -32,
+          "status": "overdue"
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000016",
+          "lastLogId": null,
+          "dueMileage": 12000,
+          "dueDate": null,
+          "milesRemaining": 157,
+          "daysRemaining": null,
+          "status": "due-soon"
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000010",
+          "lastLogId": "00000000-0000-4000-8000-000000000101",
+          "dueMileage": 19950,
+          "dueDate": "2027-09-12T19:00:00.000Z",
+          "milesRemaining": 8107,
+          "daysRemaining": 301,
+          "status": "ok"
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000014",
+          "lastLogId": "00000000-0000-4000-8000-000000000106",
+          "dueMileage": null,
+          "dueDate": null,
+          "milesRemaining": null,
+          "daysRemaining": null,
+          "status": "ok"
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000018",
+          "lastLogId": "00000000-0000-4000-8000-000000000111",
+          "dueMileage": null,
+          "dueDate": "2026-11-30T08:30:00.000Z",
+          "milesRemaining": null,
+          "daysRemaining": 15,
+          "status": "ok"
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000015",
+          "lastLogId": null,
+          "dueMileage": null,
+          "dueDate": null,
+          "milesRemaining": null,
+          "daysRemaining": null,
+          "status": "unscheduled"
+        }
+      ],
+      "trend": [
+        {
+          "date": "2025-10-14T19:00:00.000Z",
+          "mileage": 0,
+          "kind": "checkin",
+          "label": null
+        },
+        {
+          "date": "2025-10-20T19:00:00.000Z",
+          "mileage": 120,
+          "kind": "maintenance",
+          "label": "Oil & Filter Change"
+        },
+        {
+          "date": "2026-03-07T20:00:00.000Z",
+          "mileage": 4980,
+          "kind": "maintenance",
+          "label": "Oil & Filter Change"
+        },
+        {
+          "date": "2026-03-15T19:00:00.000Z",
+          "mileage": 5100,
+          "kind": "maintenance",
+          "label": "Tire Rotation"
+        },
+        {
+          "date": "2026-05-31T19:00:00.000Z",
+          "mileage": 6900,
+          "kind": "checkin",
+          "label": null
+        },
+        {
+          "date": "2026-06-30T19:00:00.000Z",
+          "mileage": 7400,
+          "kind": "checkin",
+          "label": null
+        },
+        {
+          "date": "2026-07-04T19:00:00.000Z",
+          "mileage": 8000,
+          "kind": "maintenance",
+          "label": "Lift Kit"
+        },
+        {
+          "date": "2026-07-31T23:00:00.000Z",
+          "mileage": 8650,
+          "kind": "checkin",
+          "label": null
+        },
+        {
+          "date": "2026-08-01T06:30:00.000Z",
+          "mileage": 8700,
+          "kind": "maintenance",
+          "label": "Windshield chip repair"
+        },
+        {
+          "date": "2026-08-31T19:00:00.000Z",
+          "mileage": 9400,
+          "kind": "checkin",
+          "label": null
+        },
+        {
+          "date": "2026-09-01T19:00:00.000Z",
+          "mileage": 9390,
+          "kind": "checkin",
+          "label": null
+        },
+        {
+          "date": "2026-09-12T19:00:00.000Z",
+          "mileage": 9950,
+          "kind": "maintenance",
+          "label": "Oil & Filter Change"
+        },
+        {
+          "date": "2026-10-25T19:00:00.000Z",
+          "mileage": 11200,
+          "kind": "maintenance",
+          "label": "Car Wash"
+        },
+        {
+          "date": "2026-10-31T08:30:00.000Z",
+          "mileage": 10800,
+          "kind": "maintenance",
+          "label": "Half-day Check"
+        },
+        {
+          "date": "2026-11-01T19:00:00.000Z",
+          "mileage": 11380,
+          "kind": "maintenance",
+          "label": "Car Wash"
+        },
+        {
+          "date": "2026-11-01T19:00:00.000Z",
+          "mileage": 11400,
+          "kind": "checkin",
+          "label": null
+        }
+      ],
+      "monthlyMiles": [
+        {
+          "fullLabel": "June 2026",
+          "miles": 500
+        },
+        {
+          "fullLabel": "July 2026",
+          "miles": 1300
+        },
+        {
+          "fullLabel": "August 2026",
+          "miles": 700
+        },
+        {
+          "fullLabel": "September 2026",
+          "miles": 560
+        },
+        {
+          "fullLabel": "October 2026",
+          "miles": 1830
+        },
+        {
+          "fullLabel": "November 2026",
+          "miles": 20
+        }
+      ],
+      "monthlyMilesAll": [
+        {
+          "fullLabel": "October 2025",
+          "miles": 120
+        },
+        {
+          "fullLabel": "December 2025",
+          "miles": 4860
+        },
+        {
+          "fullLabel": "March 2026",
+          "miles": 120
+        },
+        {
+          "fullLabel": "April 2026",
+          "miles": 1800
+        },
+        {
+          "fullLabel": "June 2026",
+          "miles": 500
+        },
+        {
+          "fullLabel": "July 2026",
+          "miles": 1300
+        },
+        {
+          "fullLabel": "August 2026",
+          "miles": 700
+        },
+        {
+          "fullLabel": "September 2026",
+          "miles": 560
+        },
+        {
+          "fullLabel": "October 2026",
+          "miles": 1830
+        },
+        {
+          "fullLabel": "November 2026",
+          "miles": 20
+        }
+      ],
+      "monthlyStats": [
+        {
+          "fullLabel": "November 2026",
+          "miles": 20,
+          "changeMiles": -1810,
+          "changePct": -99
+        },
+        {
+          "fullLabel": "October 2026",
+          "miles": 1830,
+          "changeMiles": 1270,
+          "changePct": 227
+        },
+        {
+          "fullLabel": "September 2026",
+          "miles": 560,
+          "changeMiles": -140,
+          "changePct": -20
+        },
+        {
+          "fullLabel": "August 2026",
+          "miles": 700,
+          "changeMiles": -600,
+          "changePct": -46
+        },
+        {
+          "fullLabel": "July 2026",
+          "miles": 1300,
+          "changeMiles": 800,
+          "changePct": 160
+        },
+        {
+          "fullLabel": "June 2026",
+          "miles": 500,
+          "changeMiles": -1300,
+          "changePct": -72
+        }
+      ],
+      "careDetail": [
+        {
+          "typeId": "00000000-0000-4000-8000-000000000010",
+          "historyIds": [
+            "00000000-0000-4000-8000-000000000101",
+            "00000000-0000-4000-8000-000000000100",
+            "00000000-0000-4000-8000-000000000102"
+          ],
+          "average": {
+            "avgMiles": 4915,
+            "avgDays": 164,
+            "percentAheadMiles": 51
+          },
+          "totalCost": 156.5
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000011",
+          "historyIds": [
+            "00000000-0000-4000-8000-000000000103"
+          ],
+          "average": {
+            "avgMiles": null,
+            "avgDays": null,
+            "percentAheadMiles": null
+          },
+          "totalCost": 25
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000012",
+          "historyIds": [
+            "00000000-0000-4000-8000-000000000105",
+            "00000000-0000-4000-8000-000000000104"
+          ],
+          "average": {
+            "avgMiles": 180,
+            "avgDays": 7,
+            "percentAheadMiles": null
+          },
+          "totalCost": 18
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000013",
+          "historyIds": [],
+          "average": {
+            "avgMiles": null,
+            "avgDays": null,
+            "percentAheadMiles": null
+          },
+          "totalCost": 0
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000014",
+          "historyIds": [
+            "00000000-0000-4000-8000-000000000106"
+          ],
+          "average": {
+            "avgMiles": null,
+            "avgDays": null,
+            "percentAheadMiles": null
+          },
+          "totalCost": 1899.99
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000015",
+          "historyIds": [],
+          "average": {
+            "avgMiles": null,
+            "avgDays": null,
+            "percentAheadMiles": null
+          },
+          "totalCost": 0
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000016",
+          "historyIds": [],
+          "average": {
+            "avgMiles": null,
+            "avgDays": null,
+            "percentAheadMiles": null
+          },
+          "totalCost": 0
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000017",
+          "historyIds": [],
+          "average": {
+            "avgMiles": null,
+            "avgDays": null,
+            "percentAheadMiles": null
+          },
+          "totalCost": 0
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000018",
+          "historyIds": [
+            "00000000-0000-4000-8000-000000000111"
+          ],
+          "average": {
+            "avgMiles": null,
+            "avgDays": null,
+            "percentAheadMiles": null
+          },
+          "totalCost": 0
+        }
+      ]
+    },
+    "00000000-0000-4000-8000-000000000002": {
+      "projectedMileage": 41230,
+      "status": [
+        {
+          "typeId": "00000000-0000-4000-8000-000000000011",
+          "lastLogId": null,
+          "dueMileage": 5000,
+          "dueDate": "2024-08-29T19:00:00.000Z",
+          "milesRemaining": -36230,
+          "daysRemaining": -808,
+          "status": "overdue"
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000012",
+          "lastLogId": "00000000-0000-4000-8000-000000000109",
+          "dueMileage": null,
+          "dueDate": "2026-11-09T19:00:00.000Z",
+          "milesRemaining": null,
+          "daysRemaining": -6,
+          "status": "overdue"
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000016",
+          "lastLogId": null,
+          "dueMileage": 12000,
+          "dueDate": null,
+          "milesRemaining": -29230,
+          "daysRemaining": null,
+          "status": "overdue"
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000017",
+          "lastLogId": "00000000-0000-4000-8000-000000000110",
+          "dueMileage": 51000,
+          "dueDate": "2026-11-16T08:30:00.000Z",
+          "milesRemaining": 9770,
+          "daysRemaining": 1,
+          "status": "due-soon"
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000010",
+          "lastLogId": "00000000-0000-4000-8000-000000000108",
+          "dueMileage": 48000,
+          "dueDate": "2027-04-09T19:00:00.000Z",
+          "milesRemaining": 6770,
+          "daysRemaining": 145,
+          "status": "ok"
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000015",
+          "lastLogId": null,
+          "dueMileage": null,
+          "dueDate": null,
+          "milesRemaining": null,
+          "daysRemaining": null,
+          "status": "unscheduled"
+        }
+      ],
+      "trend": [
+        {
+          "date": "2024-11-16T08:30:00.000Z",
+          "mileage": 21000,
+          "kind": "maintenance",
+          "label": "RAV4 Brake Fluid"
+        },
+        {
+          "date": "2026-04-09T19:00:00.000Z",
+          "mileage": 38000,
+          "kind": "maintenance",
+          "label": "Oil & Filter Change"
+        },
+        {
+          "date": "2026-07-01T19:00:00.000Z",
+          "mileage": 39500,
+          "kind": "checkin",
+          "label": null
+        },
+        {
+          "date": "2026-10-26T19:00:00.000Z",
+          "mileage": 41000,
+          "kind": "maintenance",
+          "label": "Car Wash"
+        },
+        {
+          "date": "2026-11-20T19:00:00.000Z",
+          "mileage": 41230,
+          "kind": "checkin",
+          "label": null
+        }
+      ],
+      "monthlyMiles": [
+        {
+          "fullLabel": "July 2025",
+          "miles": 17000
+        },
+        {
+          "fullLabel": "May 2026",
+          "miles": 1500
+        },
+        {
+          "fullLabel": "August 2026",
+          "miles": 1500
+        },
+        {
+          "fullLabel": "November 2026",
+          "miles": 230
+        }
+      ],
+      "monthlyMilesAll": [
+        {
+          "fullLabel": "July 2025",
+          "miles": 17000
+        },
+        {
+          "fullLabel": "May 2026",
+          "miles": 1500
+        },
+        {
+          "fullLabel": "August 2026",
+          "miles": 1500
+        },
+        {
+          "fullLabel": "November 2026",
+          "miles": 230
+        }
+      ],
+      "monthlyStats": [
+        {
+          "fullLabel": "November 2026",
+          "miles": 230,
+          "changeMiles": -1270,
+          "changePct": -85
+        },
+        {
+          "fullLabel": "August 2026",
+          "miles": 1500,
+          "changeMiles": 0,
+          "changePct": 0
+        },
+        {
+          "fullLabel": "May 2026",
+          "miles": 1500,
+          "changeMiles": -15500,
+          "changePct": -91
+        },
+        {
+          "fullLabel": "July 2025",
+          "miles": 17000,
+          "changeMiles": null,
+          "changePct": null
+        }
+      ],
+      "careDetail": [
+        {
+          "typeId": "00000000-0000-4000-8000-000000000010",
+          "historyIds": [
+            "00000000-0000-4000-8000-000000000108"
+          ],
+          "average": {
+            "avgMiles": null,
+            "avgDays": null,
+            "percentAheadMiles": null
+          },
+          "totalCost": 65
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000011",
+          "historyIds": [],
+          "average": {
+            "avgMiles": null,
+            "avgDays": null,
+            "percentAheadMiles": null
+          },
+          "totalCost": 0
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000012",
+          "historyIds": [
+            "00000000-0000-4000-8000-000000000109"
+          ],
+          "average": {
+            "avgMiles": null,
+            "avgDays": null,
+            "percentAheadMiles": null
+          },
+          "totalCost": 20
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000013",
+          "historyIds": [],
+          "average": {
+            "avgMiles": null,
+            "avgDays": null,
+            "percentAheadMiles": null
+          },
+          "totalCost": 0
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000014",
+          "historyIds": [],
+          "average": {
+            "avgMiles": null,
+            "avgDays": null,
+            "percentAheadMiles": null
+          },
+          "totalCost": 0
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000015",
+          "historyIds": [],
+          "average": {
+            "avgMiles": null,
+            "avgDays": null,
+            "percentAheadMiles": null
+          },
+          "totalCost": 0
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000016",
+          "historyIds": [],
+          "average": {
+            "avgMiles": null,
+            "avgDays": null,
+            "percentAheadMiles": null
+          },
+          "totalCost": 0
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000017",
+          "historyIds": [
+            "00000000-0000-4000-8000-000000000110"
+          ],
+          "average": {
+            "avgMiles": null,
+            "avgDays": null,
+            "percentAheadMiles": null
+          },
+          "totalCost": 140
+        },
+        {
+          "typeId": "00000000-0000-4000-8000-000000000018",
+          "historyIds": [],
+          "average": {
+            "avgMiles": null,
+            "avgDays": null,
+            "percentAheadMiles": null
+          },
+          "totalCost": 0
+        }
+      ]
+    }
+  }
+}
