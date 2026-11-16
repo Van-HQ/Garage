@@ -28,6 +28,24 @@ struct DriveView: View {
                         )
                     }
 
+                    NavigationLink {
+                        TroubleCodesView()
+                    } label: {
+                        Panel(padding: 14) {
+                            HStack(spacing: 10) {
+                                IconTile(systemName: "engine.combustion", color: Theme.statusSoon)
+                                Text("Trouble codes")
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundStyle(Theme.foreground)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(Theme.muted)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+
                     LazyVGrid(columns: columns, spacing: 10) {
                         tile("Coolant", obd.value(.coolantTemperature).map(fahrenheit), unit: "°F", symbol: "thermometer.medium")
                         tile("Intake air", obd.value(.intakeAirTemperature).map(fahrenheit), unit: "°F", symbol: "wind")
