@@ -42,7 +42,7 @@ struct ManualsView: View {
         return HStack(spacing: 10) {
             IconTile(systemName: "book.closed", color: hasManual ? Theme.accent : Theme.muted)
             VStack(alignment: .leading, spacing: 1) {
-                Text("\(vehicle.year) \(vehicle.make) \(vehicle.name)")
+                Text(verbatim: "\(vehicle.year) \(vehicle.make) \(vehicle.name)")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(Theme.foreground)
                     .lineLimit(1)

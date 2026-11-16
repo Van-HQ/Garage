@@ -1,4 +1,5 @@
 import SwiftUI
+import GarageCore
 
 @main
 struct GarageApp: App {
@@ -11,6 +12,7 @@ struct GarageApp: App {
                     RootView()
                         .environment(services.auth)
                         .environment(services.store)
+                        .environment(services.obd)
                 } else {
                     MissingConfigView()
                 }
@@ -25,6 +27,8 @@ struct GarageApp: App {
 struct AppServices {
     let auth: AuthModel
     let store: GarageStore
+    /// Live vehicle data. The simulator for now; the Bluetooth adapter slots in here later.
+    let obd = OBDSession(source: SimulatedOBDSource())
 
     /// Nil when the Supabase settings are missing from the build.
     static func make() -> AppServices? {
