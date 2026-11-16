@@ -39,7 +39,7 @@ struct SignInView: View {
                     Panel(padding: 0) {
                         VStack(spacing: 0) {
                             field("Email") {
-                                TextField("you@example.com", text: $email)
+                                TextField("Email", text: $email, prompt: Text(verbatim: "you@example.com").foregroundStyle(Theme.muted))
                                     .textContentType(.username)
                                     .keyboardType(.emailAddress)
                                     .textInputAutocapitalization(.never)
