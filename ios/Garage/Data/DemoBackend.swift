@@ -6,6 +6,7 @@ import GarageCore
 /// Lets every screen be exercised with no account and no network.
 actor DemoBackend: GarageBackend {
     private var snapshot: GarageSnapshot
+    private var trips: [Trip] = []
 
     init(now: Date = Date()) {
         snapshot = DemoData.snapshot(now: now)
@@ -38,6 +39,27 @@ actor DemoBackend: GarageBackend {
     func photoURLs(for paths: [String]) async throws -> [String: URL] { [:] }
 
     func manualURL(for vehicle: Vehicle) async throws -> URL { throw BackendError.noManual }
+
+    func saveTrip(_ trip: RecordedTrip) async throws {
+        trips.removeAll { $0.id == trip.id }
+        trips.append(trip.summary)
+        trips.sort { $0.startedAt > $1.startedAt }
+    }
+
+    func saveTripReadings(_ samples: [TripSample], for trip: RecordedTrip) async throws {}
+
+    func logTripMileage(id: UUID, vehicleID: UUID, mileage: Int, note: String, recordedAt: Date) async throws {
+        guard !snapshot.mileageLogs.contains(where: { $0.id == id }) else { return }
+        snapshot.mileageLogs.append(MileageLog(id: id, userID: DemoData.userID, vehicleID: vehicleID, mileage: mileage, note: note, recordedAt: recordedAt))
+        snapshot.mileageLogs.sort { $0.recordedAt > $1.recordedAt }
+        recomputeMileage(for: vehicleID)
+    }
+
+    func loadTrips(limit: Int) async throws -> [Trip] { Array(trips.prefix(limit)) }
+
+    func recordTroubleCodes(vehicleID: UUID, codes: [String]) async throws {}
+
+    func markTroubleCodesCleared(vehicleID: UUID) async throws {}
 
     /// Stands in for the database trigger: the vehicle's odometer follows its newest reading by date.
     private func recomputeMileage(for vehicleID: UUID) {

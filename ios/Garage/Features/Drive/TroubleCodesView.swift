@@ -4,6 +4,8 @@ import GarageCore
 /// Stored trouble codes with plain-English explanations, and a way to clear them.
 struct TroubleCodesView: View {
     @Environment(OBDSession.self) private var obd
+    @Environment(TripController.self) private var trips
+    @Environment(GarageStore.self) private var store
 
     private enum Phase: Equatable {
         case loading
@@ -93,6 +95,10 @@ struct TroubleCodesView: View {
         do {
             let codes = try await obd.source.readTroubleCodes()
             phase = .loaded(codes.map(TroubleCodes.info(for:)))
+            // Keeping a history is a bonus: if the tables aren't set up yet, showing the codes still works.
+            if let vehicle = trips.vehicle {
+                try? await store.backend.recordTroubleCodes(vehicleID: vehicle.id, codes: codes)
+            }
         } catch {
             phase = .failed(error.localizedDescription)
         }
@@ -103,6 +109,9 @@ struct TroubleCodesView: View {
         defer { isClearing = false }
         do {
             try await obd.source.clearTroubleCodes()
+            if let vehicle = trips.vehicle {
+                try? await store.backend.markTroubleCodesCleared(vehicleID: vehicle.id)
+            }
             await load()
         } catch {
             phase = .failed(error.localizedDescription)

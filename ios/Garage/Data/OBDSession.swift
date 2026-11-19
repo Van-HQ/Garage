@@ -13,6 +13,11 @@ final class OBDSession {
     let source: OBDDataSource
     private var task: Task<Void, Never>?
 
+    /// Called with every batch of readings, as they arrive. Trip recording listens here.
+    var onReadings: (([OBDReading]) -> Void)?
+    /// Called when the connection ends: stopped by the user, dropped, or failed.
+    var onDisconnect: (() -> Void)?
+
     init(source: OBDDataSource) {
         self.source = source
     }
@@ -27,14 +32,20 @@ final class OBDSession {
                 switch event {
                 case .state(let state):
                     self.state = state
+                    switch state {
+                    case .disconnected, .failed: self.onDisconnect?()
+                    default: break
+                    }
                 case .readings(let readings):
                     for reading in readings { self.latest[reading.pid] = reading }
+                    self.onReadings?(readings)
                 }
             }
         }
     }
 
     func stop() {
+        onDisconnect?()
         task?.cancel()
         task = nil
         state = .disconnected

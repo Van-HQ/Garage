@@ -146,6 +146,113 @@ struct SupabaseBackend: GarageBackend {
             .createSignedURL(path: path, expiresIn: Self.signedURLLifetime)
     }
 
+    // MARK: OBD
+
+    func saveTrip(_ trip: RecordedTrip) async throws {
+        let userID = try await currentUserID()
+
+        struct Row: Encodable {
+            let id: UUID
+            let user_id: UUID
+            let vehicle_id: UUID
+            let started_at: Date
+            let ended_at: Date
+            let distance_miles: Double
+            let avg_speed_mph: Double?
+            let max_speed_mph: Double?
+            let max_rpm: Double?
+            let max_coolant_c: Double?
+            let fuel_used_pct: Double?
+            let distance_source: String
+        }
+        try await client.from("trips")
+            .upsert(
+                Row(
+                    id: trip.id, user_id: userID, vehicle_id: trip.vehicleID, started_at: trip.startedAt,
+                    ended_at: trip.endedAt, distance_miles: trip.distanceMiles, avg_speed_mph: trip.avgSpeedMph,
+                    max_speed_mph: trip.maxSpeedMph, max_rpm: trip.maxRPM, max_coolant_c: trip.maxCoolantC,
+                    fuel_used_pct: trip.fuelUsedPercent, distance_source: trip.distanceSource
+                ),
+                onConflict: "id", returning: .minimal
+            )
+            .execute()
+    }
+
+    func saveTripReadings(_ samples: [TripSample], for trip: RecordedTrip) async throws {
+        guard !samples.isEmpty else { return }
+        let userID = try await currentUserID()
+
+        struct Row: Encodable {
+            let user_id: UUID
+            let vehicle_id: UUID
+            let trip_id: UUID
+            let recorded_at: Date
+            let pid: Int
+            let value: Double
+        }
+        let rows = samples.map {
+            Row(user_id: userID, vehicle_id: trip.vehicleID, trip_id: trip.id, recorded_at: $0.recordedAt, pid: $0.pid, value: $0.value)
+        }
+        try await client.from("obd_readings")
+            .upsert(rows, onConflict: "trip_id,recorded_at,pid", returning: .minimal, ignoreDuplicates: true)
+            .execute()
+    }
+
+    func logTripMileage(id: UUID, vehicleID: UUID, mileage: Int, note: String, recordedAt: Date) async throws {
+        let userID = try await currentUserID()
+
+        struct Row: Encodable {
+            let id: UUID
+            let user_id: UUID
+            let vehicle_id: UUID
+            let mileage: Int
+            let note: String
+            let recorded_at: Date
+        }
+        try await client.from("mileage_logs")
+            .upsert(
+                Row(id: id, user_id: userID, vehicle_id: vehicleID, mileage: mileage, note: note, recorded_at: recordedAt),
+                onConflict: "id", returning: .minimal, ignoreDuplicates: true
+            )
+            .execute()
+    }
+
+    func loadTrips(limit: Int) async throws -> [Trip] {
+        try await client.from("trips").select()
+            .order("started_at", ascending: false).limit(limit)
+            .execute().value
+    }
+
+    func recordTroubleCodes(vehicleID: UUID, codes: [String]) async throws {
+        guard !codes.isEmpty else { return }
+        let userID = try await currentUserID()
+
+        struct Open: Decodable { let code: String }
+        let open: [Open] = try await client.from("dtc_events").select("code")
+            .eq("vehicle_id", value: vehicleID)
+            .is("cleared_at", value: nil)
+            .execute().value
+        let known = Set(open.map(\.code))
+
+        struct Row: Encodable {
+            let user_id: UUID
+            let vehicle_id: UUID
+            let code: String
+        }
+        let fresh = codes.filter { !known.contains($0) }.map { Row(user_id: userID, vehicle_id: vehicleID, code: $0) }
+        guard !fresh.isEmpty else { return }
+        try await client.from("dtc_events").insert(fresh, returning: .minimal).execute()
+    }
+
+    func markTroubleCodesCleared(vehicleID: UUID) async throws {
+        struct Patch: Encodable { let cleared_at: Date }
+        try await client.from("dtc_events")
+            .update(Patch(cleared_at: Date()), returning: .minimal)
+            .eq("vehicle_id", value: vehicleID)
+            .is("cleared_at", value: nil)
+            .execute()
+    }
+
     private func currentUserID() async throws -> UUID {
         do {
             return try await client.auth.session.user.id

@@ -4,6 +4,8 @@ import GarageCore
 /// Live gauges from the OBD source: speed and RPM dials, then the slower values as tiles.
 struct DriveView: View {
     @Environment(OBDSession.self) private var obd
+    @Environment(TripController.self) private var trips
+    @Environment(GarageStore.self) private var store
 
     private let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
 
@@ -12,6 +14,7 @@ struct DriveView: View {
             ScrollView {
                 VStack(spacing: 18) {
                     statusBar
+                    tripPanel
 
                     HStack(spacing: 14) {
                         DialGauge(
@@ -62,6 +65,65 @@ struct DriveView: View {
             }
             .background(Theme.background)
             .navigationTitle("Drive")
+        }
+    }
+
+    private var tripPanel: some View {
+        Panel(padding: 14) {
+            VStack(alignment: .leading, spacing: 12) {
+                if store.vehicles.count > 1 {
+                    Picker("Vehicle", selection: Binding(
+                        get: { trips.vehicle?.id },
+                        set: { trips.vehicleID = $0 }
+                    )) {
+                        ForEach(store.vehicles) { Text($0.name).tag(Optional($0.id)) }
+                    }
+                    .pickerStyle(.segmented)
+                    .disabled(trips.isRecording)
+                }
+
+                HStack(spacing: 10) {
+                    IconTile(systemName: "road.lanes", color: trips.isRecording ? Theme.statusOK : Theme.muted)
+                    VStack(alignment: .leading, spacing: 1) {
+                        if let progress = trips.progress {
+                            Text("Recording · \(progress.distanceMiles.oneDecimal) mi")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(Theme.foreground)
+                                .monospacedDigit()
+                            Text("\(progress.lastUpdate.timeIntervalSince(progress.startedAt).durationText) so far")
+                                .font(.caption)
+                                .foregroundStyle(Theme.muted)
+                        } else {
+                            Text("Trip recording")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(Theme.foreground)
+                            Text(obd.isActive ? "Starts when the vehicle moves" : "Start the connection to record trips")
+                                .font(.caption)
+                                .foregroundStyle(Theme.muted)
+                        }
+                    }
+                    Spacer()
+                    if trips.isRecording {
+                        Button("End trip") { trips.finishCurrentTrip() }
+                            .buttonStyle(.bordered)
+                    }
+                }
+
+                NavigationLink {
+                    TripsView()
+                } label: {
+                    HStack {
+                        Text(trips.pending.isEmpty ? "Trips" : "Trips · \(trips.pending.count) waiting to upload")
+                            .font(.footnote.weight(.medium))
+                            .foregroundStyle(trips.pending.isEmpty ? Theme.accent : Theme.statusSoon)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Theme.muted)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 

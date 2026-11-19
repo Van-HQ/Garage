@@ -46,3 +46,19 @@ extension Vehicle {
         return detail.isEmpty ? name : "\(name) · \(detail)"
     }
 }
+
+extension TimeInterval {
+    /// "23 min", "1 h 12 min", "45 s"
+    var durationText: String {
+        let total = Int(self.rounded())
+        if total < 60 { return "\(total) s" }
+        let minutes = (total + 30) / 60
+        if minutes < 60 { return "\(minutes) min" }
+        return "\(minutes / 60) h \(minutes % 60) min"
+    }
+}
+
+extension Double {
+    /// "12.3"
+    var oneDecimal: String { formatted(.number.precision(.fractionLength(1))) }
+}

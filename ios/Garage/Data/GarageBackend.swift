@@ -60,6 +60,26 @@ protocol GarageBackend: Sendable {
 
     /// Short-lived signed URL for a vehicle's owner's manual PDF.
     func manualURL(for vehicle: Vehicle) async throws -> URL
+
+    // MARK: OBD (needs the trips / obd_readings / dtc_events tables from supabase/schema.sql)
+
+    /// Saves the trip's summary row. Safe to repeat: the trip's id is chosen by the app.
+    func saveTrip(_ trip: RecordedTrip) async throws
+
+    /// Saves a batch of a trip's samples. Safe to repeat: duplicates are ignored.
+    func saveTripReadings(_ samples: [TripSample], for trip: RecordedTrip) async throws
+
+    /// Writes a trip's distance as an odometer reading. Safe to repeat: `id` is chosen by the app.
+    func logTripMileage(id: UUID, vehicleID: UUID, mileage: Int, note: String, recordedAt: Date) async throws
+
+    /// Newest first.
+    func loadTrips(limit: Int) async throws -> [Trip]
+
+    /// Remembers codes the vehicle reported. Codes already open for this vehicle aren't added twice.
+    func recordTroubleCodes(vehicleID: UUID, codes: [String]) async throws
+
+    /// Marks this vehicle's open codes as cleared.
+    func markTroubleCodesCleared(vehicleID: UUID) async throws
 }
 
 enum BackendError: LocalizedError {

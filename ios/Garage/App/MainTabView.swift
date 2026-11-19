@@ -2,6 +2,8 @@ import SwiftUI
 
 struct MainTabView: View {
     @Environment(GarageStore.self) private var store
+    @Environment(TripController.self) private var trips
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         Group {
@@ -17,7 +19,14 @@ struct MainTabView: View {
                 }
             }
         }
-        .task { await store.refresh() }
+        .task {
+            await store.refresh()
+            await trips.syncPending()
+        }
+        // Retry waiting trips each time the app comes back to the front.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await trips.syncPending() } }
+        }
     }
 
     /// First load only. After that, screens keep showing what they have and offer pull to refresh.

@@ -184,3 +184,55 @@ public struct MileageLog: Codable, Identifiable, Hashable, Sendable {
         case createdAt = "created_at"
     }
 }
+
+/// A saved drive (the `trips` table).
+public struct Trip: Codable, Identifiable, Hashable, Sendable {
+    public var id: UUID
+    public var vehicleID: UUID
+    public var startedAt: Date
+    public var endedAt: Date
+    public var distanceMiles: Double
+    public var avgSpeedMph: Double?
+    public var maxSpeedMph: Double?
+    public var maxRPM: Double?
+    public var maxCoolantC: Double?
+    public var fuelUsedPercent: Double?
+    public var distanceSource: String
+
+    public init(
+        id: UUID, vehicleID: UUID, startedAt: Date, endedAt: Date, distanceMiles: Double,
+        avgSpeedMph: Double? = nil, maxSpeedMph: Double? = nil, maxRPM: Double? = nil,
+        maxCoolantC: Double? = nil, fuelUsedPercent: Double? = nil, distanceSource: String = "obd"
+    ) {
+        self.id = id; self.vehicleID = vehicleID; self.startedAt = startedAt; self.endedAt = endedAt
+        self.distanceMiles = distanceMiles; self.avgSpeedMph = avgSpeedMph; self.maxSpeedMph = maxSpeedMph
+        self.maxRPM = maxRPM; self.maxCoolantC = maxCoolantC; self.fuelUsedPercent = fuelUsedPercent
+        self.distanceSource = distanceSource
+    }
+
+    public var duration: TimeInterval { endedAt.timeIntervalSince(startedAt) }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case vehicleID = "vehicle_id"
+        case startedAt = "started_at"
+        case endedAt = "ended_at"
+        case distanceMiles = "distance_miles"
+        case avgSpeedMph = "avg_speed_mph"
+        case maxSpeedMph = "max_speed_mph"
+        case maxRPM = "max_rpm"
+        case maxCoolantC = "max_coolant_c"
+        case fuelUsedPercent = "fuel_used_pct"
+        case distanceSource = "distance_source"
+    }
+}
+
+public extension RecordedTrip {
+    var summary: Trip {
+        Trip(
+            id: id, vehicleID: vehicleID, startedAt: startedAt, endedAt: endedAt, distanceMiles: distanceMiles,
+            avgSpeedMph: avgSpeedMph, maxSpeedMph: maxSpeedMph, maxRPM: maxRPM, maxCoolantC: maxCoolantC,
+            fuelUsedPercent: fuelUsedPercent, distanceSource: distanceSource
+        )
+    }
+}
