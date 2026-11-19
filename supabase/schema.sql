@@ -193,3 +193,86 @@ create policy "maintenance-photos: users manage own files" on storage.objects
   for all
   using (bucket_id = 'maintenance-photos' and auth.uid()::text = (storage.foldername(name))[1])
   with check (bucket_id = 'maintenance-photos' and auth.uid()::text = (storage.foldername(name))[1]);
+
+-- ============ OBD: TRIPS, READINGS, TROUBLE CODES (iOS app) ============
+-- Safe to run standalone even if the tables above already exist.
+-- The iOS app records drives from an OBD adapter. A trip's distance is also
+-- written as a mileage_logs row by the app, so the odometer trigger above keeps
+-- vehicles.current_mileage in sync; nothing here touches vehicles directly.
+--
+-- This file has no explicit GRANT statements (same as the rest of the schema).
+-- After running it, check the new tables' grants in the Supabase dashboard
+-- (Table Editor > the table > Policies/Privileges) or with:
+--   select table_name, grantee, privilege_type
+--   from information_schema.role_table_grants
+--   where table_schema = 'public' and table_name in ('trips', 'obd_readings', 'dtc_events')
+--   order by 1, 2, 3;
+-- and confirm `authenticated` can select, insert, update and delete.
+
+create table if not exists trips (
+  id uuid primary key default gen_random_uuid(), -- the app supplies this, so a retried upload can't create a duplicate
+  user_id uuid not null references auth.users(id) on delete cascade,
+  vehicle_id uuid not null references vehicles(id) on delete cascade,
+  started_at timestamptz not null,
+  ended_at timestamptz not null,
+  distance_miles numeric not null default 0,
+  avg_speed_mph numeric,                          -- distance over time spent moving
+  max_speed_mph numeric,
+  max_rpm numeric,
+  max_coolant_c numeric,
+  fuel_used_pct numeric,                          -- fuel level drop, in points of a full tank; null if unknown
+  distance_source text not null default 'obd',    -- 'obd' (integrated vehicle speed) | 'gps'
+  created_at timestamptz not null default now(),
+  constraint trips_end_after_start check (ended_at >= started_at)
+);
+
+alter table trips enable row level security;
+
+drop policy if exists "trips are owned by user" on trips;
+create policy "trips are owned by user" on trips
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create index if not exists idx_trips_vehicle on trips(vehicle_id, started_at desc);
+
+-- Sampled values from a trip, not every reading the gauges show: one sample of
+-- each value every ~15 s while driving (a few thousand rows per hour at most).
+create table if not exists obd_readings (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  vehicle_id uuid not null references vehicles(id) on delete cascade,
+  trip_id uuid references trips(id) on delete cascade,
+  recorded_at timestamptz not null,
+  pid smallint not null,                          -- OBD-II service 01 PID, e.g. 12 = 0x0C engine RPM
+  value double precision not null                 -- in the PID's standard unit (km/h, °C, %, rpm, V)
+);
+
+alter table obd_readings enable row level security;
+
+drop policy if exists "obd_readings are owned by user" on obd_readings;
+create policy "obd_readings are owned by user" on obd_readings
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create index if not exists idx_obd_readings_trip on obd_readings(trip_id, recorded_at);
+create index if not exists idx_obd_readings_vehicle on obd_readings(vehicle_id, recorded_at desc);
+-- Lets the app re-send a batch after a dropped connection without duplicating rows.
+create unique index if not exists idx_obd_readings_dedupe on obd_readings(trip_id, recorded_at, pid);
+
+create table if not exists dtc_events (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  vehicle_id uuid not null references vehicles(id) on delete cascade,
+  code text not null,                             -- e.g. 'P0456'
+  first_seen timestamptz not null default now(),
+  cleared_at timestamptz
+);
+
+alter table dtc_events enable row level security;
+
+drop policy if exists "dtc_events are owned by user" on dtc_events;
+create policy "dtc_events are owned by user" on dtc_events
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- At most one open (not yet cleared) event per code per vehicle. A code that
+-- comes back after being cleared gets a new row.
+create unique index if not exists idx_dtc_events_open on dtc_events(vehicle_id, code) where cleared_at is null;
+create index if not exists idx_dtc_events_vehicle on dtc_events(vehicle_id, first_seen desc);
