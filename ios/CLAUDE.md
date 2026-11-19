@@ -33,4 +33,4 @@ Native SwiftUI port of the Garage web app (Next.js in the repo root). Personal u
 - Debugging: give two or three options before picking one.
 - Commit often in small commits. Prefer solid foundations over quick prototypes.
 - After each task, explain what changed and why.
-- After pushing iOS updates, end the reply with `~/Desktop/Garage/ios/update.sh` and a reminder to press ⌘R.
+- After pushing iOS updates, end the reply with `~/Desktop/Projects/Garage/ios/update.sh` and a reminder to press ⌘R.
