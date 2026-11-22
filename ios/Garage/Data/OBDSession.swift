@@ -28,6 +28,8 @@ final class OBDSession {
 
     /// Called with every batch of readings, as they arrive. Trip recording listens here.
     var onReadings: (([OBDReading]) -> Void)?
+    /// Called when the adapter connects and starts delivering readings.
+    var onConnect: (() -> Void)?
     /// Called when the connection ends: stopped by the user, dropped, or failed.
     var onDisconnect: (() -> Void)?
 
@@ -52,7 +54,9 @@ final class OBDSession {
                 case .state(let state):
                     self.state = state
                     switch state {
-                    case .connected: self.startCodePolling()
+                    case .connected:
+                        self.startCodePolling()
+                        self.onConnect?()
                     case .disconnected, .failed:
                         self.stopCodePolling()
                         self.onDisconnect?()

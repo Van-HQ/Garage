@@ -39,6 +39,8 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         ITSAppUsesNonExemptEncryption: false
+        NSLocationWhenInUseUsageDescription: Garage uses GPS to measure trip distance when your vehicle doesn't report its speed.
+        UIBackgroundModes: [location]
         NSBluetoothAlwaysUsageDescription: Garage connects to your OBD-II adapter to read live data from your vehicle.
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true

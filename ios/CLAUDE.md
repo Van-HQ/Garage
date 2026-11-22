@@ -41,3 +41,8 @@ Native SwiftUI port of the Garage web app (Next.js in the repo root). Personal u
 - Simulator builds pick up `Garage/Garage.entitlements` automatically. Test with the Simulator's I/O > External Displays > CarPlay.
 - Device builds do not use the entitlement until the matching profile exists. Once Apple's approved category is on the App ID and a profile is generated, add `CODE_SIGN_ENTITLEMENTS = Garage/Garage.entitlements` to `Config/Config.local.xcconfig`. The key in the entitlements file must match the approved category, or signing fails.
 - Tabs: Care, Drive, Codes. `OBDSession` asks the connected car for trouble codes every 60 s and keeps `alerts` (hot coolant at 110 °C / 230 °F, or a trouble code the car reports). The rules live in `GarageCore/OBD/DriveAlerts.swift`. CarPlay shows each alert once as a full-screen `CPAlertTemplate`; an alert can fire again after its cause clears.
+
+## GPS distance fallback
+
+- `Garage/Data/LocationSpeedSource.swift` supplies GPS speed while an OBD connection is up. `TripController` uses it only when the car hasn't reported speed for 5 s, so the two sources never double-count. A trip's `distance_source` is `obd`, `gps` or `mixed`.
+- Needs the "location" background mode (in `project.yml`) so GPS keeps running with the phone locked.

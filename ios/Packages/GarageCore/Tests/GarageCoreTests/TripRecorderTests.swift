@@ -203,3 +203,44 @@ final class TripRecorderTests: XCTestCase {
         XCTAssertGreaterThan(km, 1)
     }
 }
+
+final class TripRecorderGPSTests: XCTestCase {
+    private let start = Date(timeIntervalSince1970: 1_700_000_000)
+
+    private func speed(_ kmh: Double, at seconds: TimeInterval) -> OBDReading {
+        OBDReading(pid: .speed, value: kmh, timestamp: start.addingTimeInterval(seconds))
+    }
+
+    /// Drives 60 km/h for `seconds`, one reading a second, then stops long enough to end the trip.
+    private func drive(_ recorder: inout TripRecorder, from: TimeInterval, seconds: Int, fromGPS: Bool) -> RecordedTrip? {
+        var trip: RecordedTrip?
+        for i in 0..<seconds {
+            if let t = recorder.ingest([speed(60, at: from + TimeInterval(i))], fromGPS: fromGPS) { trip = t }
+        }
+        return trip
+    }
+
+    func testGPSOnlyTripIsLabelledGPS() {
+        var recorder = TripRecorder(vehicleID: UUID())
+        _ = drive(&recorder, from: 0, seconds: 120, fromGPS: true)
+        let trip = recorder.finish()
+        XCTAssertEqual(trip?.distanceSource, "gps")
+        // 60 km/h for ~2 minutes is about 2 km, 1.2 miles.
+        XCTAssertEqual(trip?.distanceMiles ?? 0, 1.2, accuracy: 0.1)
+    }
+
+    func testCarOnlyTripStaysOBD() {
+        var recorder = TripRecorder(vehicleID: UUID())
+        _ = drive(&recorder, from: 0, seconds: 120, fromGPS: false)
+        XCTAssertEqual(recorder.finish()?.distanceSource, "obd")
+    }
+
+    func testSwitchingSourceMidTripIsMixed() {
+        var recorder = TripRecorder(vehicleID: UUID())
+        _ = drive(&recorder, from: 0, seconds: 60, fromGPS: false)
+        _ = drive(&recorder, from: 60, seconds: 60, fromGPS: true)
+        let trip = recorder.finish()
+        XCTAssertEqual(trip?.distanceSource, "mixed")
+        XCTAssertEqual(trip?.distanceMiles ?? 0, 1.2, accuracy: 0.1)
+    }
+}

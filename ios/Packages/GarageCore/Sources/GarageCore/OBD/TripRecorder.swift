@@ -51,6 +51,8 @@ public let kilometersPerMile = 1.609344
 /// A trip starts when the vehicle starts moving and ends once it has been
 /// stopped for `endAfterStopped` seconds (or when `finish` is called). Distance
 /// is the integral of vehicle speed, with gaps in the data not counted as driving.
+/// Speed normally comes from the car; readings marked `fromGPS` stand in when the
+/// car doesn't report speed, and the trip records which source its distance came from.
 public struct TripRecorder: Sendable {
     public struct Settings: Sendable {
         /// Speed that counts as "moving", in km/h.
@@ -82,6 +84,8 @@ public struct TripRecorder: Sendable {
         var startedAt: Date
         var lastMovingAt: Date
         var distanceKm = 0.0
+        /// The part of `distanceKm` that came from GPS speed.
+        var gpsKm = 0.0
         var movingSeconds = 0.0
         var lastSpeed: (kmh: Double, at: Date)?
         var stoppedSince: Date?
@@ -111,10 +115,10 @@ public struct TripRecorder: Sendable {
     public var isRecording: Bool { active != nil }
 
     /// Feeds one batch of readings in. Returns a finished trip when this batch ended one.
-    public mutating func ingest(_ readings: [OBDReading]) -> RecordedTrip? {
+    public mutating func ingest(_ readings: [OBDReading], fromGPS: Bool = false) -> RecordedTrip? {
         var finished: RecordedTrip?
         for reading in readings.sorted(by: { $0.timestamp < $1.timestamp }) {
-            if let trip = ingest(reading) { finished = trip }
+            if let trip = ingest(reading, fromGPS: fromGPS) { finished = trip }
         }
         return finished
     }
@@ -128,8 +132,8 @@ public struct TripRecorder: Sendable {
         return build(current, endedAt: current.lastMovingAt)
     }
 
-    private mutating func ingest(_ reading: OBDReading) -> RecordedTrip? {
-        if reading.pid == .speed { return ingestSpeed(reading) }
+    private mutating func ingest(_ reading: OBDReading, fromGPS: Bool) -> RecordedTrip? {
+        if reading.pid == .speed { return ingestSpeed(reading, fromGPS: fromGPS) }
         guard var current = active else { return nil }
         record(reading, into: &current)
         current.lastUpdate = max(current.lastUpdate, reading.timestamp)
@@ -137,7 +141,7 @@ public struct TripRecorder: Sendable {
         return nil
     }
 
-    private mutating func ingestSpeed(_ reading: OBDReading) -> RecordedTrip? {
+    private mutating func ingestSpeed(_ reading: OBDReading, fromGPS: Bool) -> RecordedTrip? {
         let kmh = reading.value
         let now = reading.timestamp
         defer { lastSeenSpeed = (kmh, now) }
@@ -149,7 +153,7 @@ public struct TripRecorder: Sendable {
             // Count the stretch from the previous (slower) reading, so the trip's first seconds aren't lost.
             if let previous = lastSeenSpeed, now.timeIntervalSince(previous.at) <= settings.maxGap {
                 started.startedAt = previous.at
-                accumulate(&started, from: previous, to: (kmh, now))
+                accumulate(&started, from: previous, to: (kmh, now), fromGPS: fromGPS)
             }
             record(reading, into: &started)
             started.lastSpeed = (kmh, now)
@@ -158,7 +162,7 @@ public struct TripRecorder: Sendable {
         }
 
         if let previous = current.lastSpeed {
-            accumulate(&current, from: previous, to: (kmh, now))
+            accumulate(&current, from: previous, to: (kmh, now), fromGPS: fromGPS)
         }
         current.lastSpeed = (kmh, now)
         current.lastUpdate = max(current.lastUpdate, now)
@@ -181,10 +185,12 @@ public struct TripRecorder: Sendable {
     }
 
     /// Adds the distance and moving time between two speed readings (trapezoid rule).
-    private func accumulate(_ trip: inout Active, from previous: (kmh: Double, at: Date), to next: (kmh: Double, at: Date)) {
+    private func accumulate(_ trip: inout Active, from previous: (kmh: Double, at: Date), to next: (kmh: Double, at: Date), fromGPS: Bool) {
         let dt = next.at.timeIntervalSince(previous.at)
         guard dt > 0, dt <= settings.maxGap else { return }
-        trip.distanceKm += (previous.kmh + next.kmh) / 2 * dt / 3600
+        let km = (previous.kmh + next.kmh) / 2 * dt / 3600
+        trip.distanceKm += km
+        if fromGPS { trip.gpsKm += km }
         if max(previous.kmh, next.kmh) >= settings.stoppedKmh { trip.movingSeconds += dt }
     }
 
@@ -206,6 +212,12 @@ public struct TripRecorder: Sendable {
         }
     }
 
+    /// "obd" when the car supplied all the distance, "gps" when GPS did, "mixed" for both.
+    static func source(gpsKm: Double, totalKm: Double) -> String {
+        if gpsKm <= 0 { return "obd" }
+        return gpsKm >= totalKm - 1e-9 ? "gps" : "mixed"
+    }
+
     private func build(_ trip: Active, endedAt: Date) -> RecordedTrip? {
         let miles = trip.distanceKm / kilometersPerMile
         guard miles >= settings.minDistanceMiles else { return nil }
@@ -219,6 +231,7 @@ public struct TripRecorder: Sendable {
             id: UUID(), vehicleID: vehicleID, startedAt: trip.startedAt, endedAt: max(endedAt, trip.startedAt),
             distanceMiles: miles, avgSpeedMph: avgSpeed, maxSpeedMph: trip.maxSpeedKmh / kilometersPerMile,
             maxRPM: trip.maxRPM, maxCoolantC: trip.maxCoolant, fuelUsedPercent: fuelUsed,
+            distanceSource: Self.source(gpsKm: trip.gpsKm, totalKm: trip.distanceKm),
             samples: trip.samples
         )
     }

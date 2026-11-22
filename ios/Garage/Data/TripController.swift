@@ -19,6 +19,11 @@ final class TripController {
     private let store: GarageStore
     private let queue: TripQueue
     private var recorder: TripRecorder?
+    private let location = LocationSpeedSource()
+    /// When the car last gave a speed reading. GPS speed is only used once this goes stale.
+    private var lastCarSpeedAt: Date?
+    /// How long the car can stay silent on speed before GPS fills in.
+    private static let carSpeedStaleAfter: TimeInterval = 5
     private static let vehicleKey = "drive.vehicleID"
 
     /// The vehicle being driven. Defaults to the first one; remembered between launches.
@@ -33,7 +38,13 @@ final class TripController {
         self.vehicleID = UserDefaults.standard.string(forKey: Self.vehicleKey).flatMap(UUID.init(uuidString:))
 
         obd.onReadings = { [weak self] readings in self?.handle(readings) }
-        obd.onDisconnect = { [weak self] in self?.finishCurrentTrip() }
+        obd.onConnect = { [weak self] in self?.location.start() }
+        obd.onDisconnect = { [weak self] in
+            self?.location.stop()
+            self?.lastCarSpeedAt = nil
+            self?.finishCurrentTrip()
+        }
+        location.onSpeed = { [weak self] reading in self?.handleGPS(reading) }
         Task { [weak self] in
             guard let self else { return }
             self.pending = await self.queue.all()
@@ -49,12 +60,23 @@ final class TripController {
     // MARK: Recording
 
     private func handle(_ readings: [OBDReading]) {
+        if let speed = readings.last(where: { $0.pid == .speed }) { lastCarSpeedAt = speed.timestamp }
+        ingest(readings, fromGPS: false)
+    }
+
+    /// GPS speed counts only when the car isn't reporting its own, so the two never double-count.
+    private func handleGPS(_ reading: OBDReading) {
+        if let last = lastCarSpeedAt, reading.timestamp.timeIntervalSince(last) < Self.carSpeedStaleAfter { return }
+        ingest([reading], fromGPS: true)
+    }
+
+    private func ingest(_ readings: [OBDReading], fromGPS: Bool) {
         guard let vehicle else { return }
         if recorder?.vehicleID != vehicle.id {
             // Only reachable between trips: the picker is locked while one is recording.
             recorder = TripRecorder(vehicleID: vehicle.id)
         }
-        let finished = recorder?.ingest(readings)
+        let finished = recorder?.ingest(readings, fromGPS: fromGPS)
         progress = recorder?.progress
         if let finished { enqueue(finished) }
     }
@@ -136,7 +158,7 @@ final class TripController {
             let miles = trip.distanceMiles.formatted(.number.precision(.fractionLength(1)))
             try await backend.logTripMileage(
                 id: item.mileageLogID, vehicleID: trip.vehicleID, mileage: odometer,
-                note: "Trip: \(miles) mi (OBD)", recordedAt: trip.endedAt
+                note: "Trip: \(miles) mi (\(trip.distanceSource == "obd" ? "OBD" : trip.distanceSource == "gps" ? "GPS" : "OBD + GPS"))", recordedAt: trip.endedAt
             )
             item.mileageLogged = true
             await queue.update(item)

@@ -221,7 +221,7 @@ create table if not exists trips (
   max_rpm numeric,
   max_coolant_c numeric,
   fuel_used_pct numeric,                          -- fuel level drop, in points of a full tank; null if unknown
-  distance_source text not null default 'obd',    -- 'obd' (integrated vehicle speed) | 'gps'
+  distance_source text not null default 'obd',    -- 'obd' (integrated vehicle speed) | 'gps' | 'mixed'
   created_at timestamptz not null default now(),
   constraint trips_end_after_start check (ended_at >= started_at)
 );
