@@ -10,7 +10,7 @@ final class OBDSession {
     private(set) var state: OBDConnectionState = .disconnected
     private(set) var latest: [OBDPID: OBDReading] = [:]
 
-    let source: OBDDataSource
+    private(set) var source: OBDDataSource
     private var task: Task<Void, Never>?
 
     /// Called with every batch of readings, as they arrive. Trip recording listens here.
@@ -23,6 +23,12 @@ final class OBDSession {
     }
 
     var isActive: Bool { task != nil }
+
+    /// Switches between the real adapter and the simulator. Stops any running connection first.
+    func use(_ newSource: OBDDataSource) {
+        if isActive { stop() }
+        source = newSource
+    }
 
     func start() {
         guard task == nil else { return }

@@ -36,9 +36,25 @@ struct AppServices {
     init(auth: AuthModel, store: GarageStore) {
         self.auth = auth
         self.store = store
-        let obd = OBDSession(source: SimulatedOBDSource())
+        let obd = OBDSession(source: Self.makeSource(simulated: Self.wantsSimulator))
         self.obd = obd
         self.trips = TripController(obd: obd, store: store)
+    }
+
+    static let simulatorKey = "obd.useSimulator"
+
+    /// Demo mode always simulates. Otherwise the Settings switch decides; it starts off, meaning a real adapter.
+    static var wantsSimulator: Bool {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-demo") { return true }
+        #endif
+        return UserDefaults.standard.bool(forKey: simulatorKey)
+    }
+
+    static func makeSource(simulated: Bool) -> OBDDataSource {
+        simulated
+            ? SimulatedOBDSource()
+            : ELM327Source(displayName: "Bluetooth adapter") { try await BLEAdapterTransport.open() }
     }
 
     /// One shared set, so the phone and CarPlay scenes use the same data and OBD session.

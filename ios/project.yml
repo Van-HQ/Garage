@@ -39,6 +39,7 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         ITSAppUsesNonExemptEncryption: false
+        NSBluetoothAlwaysUsageDescription: Garage connects to your OBD-II adapter to read live data from your vehicle.
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true
           UISceneConfigurations:
