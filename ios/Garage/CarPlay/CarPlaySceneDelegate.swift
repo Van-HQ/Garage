@@ -7,6 +7,10 @@ import GarageCore
 final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
     private var interfaceController: CPInterfaceController?
     private var driveTemplate: CPInformationTemplate?
+    private var codesTemplate: CPListTemplate?
+    /// Alerts already shown this session, so each problem interrupts the driver once.
+    private var presentedAlerts: Set<String> = []
+    private var isShowingAlert = false
     private var refreshTimer: Timer?
 
     func templateApplicationScene(
@@ -27,6 +31,9 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         refreshTimer = nil
         self.interfaceController = nil
         driveTemplate = nil
+        codesTemplate = nil
+        presentedAlerts = []
+        isShowingAlert = false
     }
 
     // MARK: Building the screens
@@ -42,12 +49,18 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let care = careTemplate(services)
         let drive = makeDriveTemplate(services)
         driveTemplate = drive
-        show([care, drive])
+        let codes = makeCodesTemplate(services)
+        codesTemplate = codes
+        show([care, drive, codes])
 
         // CarPlay templates don't observe anything, so refresh the drive screen on a timer.
         refreshTimer?.invalidate()
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.refreshDrive(services) }
+            Task { @MainActor in
+                self?.refreshDrive(services)
+                self?.refreshCodes(services)
+                self?.presentNewAlert(services)
+            }
         }
     }
 
@@ -110,6 +123,80 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     @MainActor
     private func refreshDrive(_ services: AppServices) {
         driveTemplate?.items = driveItems(services)
+    }
+
+    // MARK: Trouble codes
+
+    @MainActor
+    private func makeCodesTemplate(_ services: AppServices) -> CPListTemplate {
+        let template = CPListTemplate(title: "Codes", sections: codeSections(services))
+        template.tabTitle = "Codes"
+        template.tabImage = UIImage(systemName: "exclamationmark.triangle")
+        template.emptyViewTitleVariants = ["No trouble codes"]
+        template.emptyViewSubtitleVariants = ["The car isn't reporting any."]
+        return template
+    }
+
+    @MainActor
+    private func refreshCodes(_ services: AppServices) {
+        codesTemplate?.updateSections(codeSections(services))
+    }
+
+    @MainActor
+    private func codeSections(_ services: AppServices) -> [CPListSection] {
+        guard case .connected = services.obd.state else {
+            let row = CPListItem(text: "Adapter not connected", detailText: "Start a drive on your iPhone to read codes.")
+            return [CPListSection(items: [row])]
+        }
+        guard services.obd.hasReadCodes else {
+            return [CPListSection(items: [CPListItem(text: "Reading codes…", detailText: nil)])]
+        }
+        let rows = services.obd.troubleCodes.map { code -> CPListItem in
+            let info = TroubleCodes.info(for: code)
+            let row = CPListItem(text: code, detailText: info.title)
+            row.handler = { [weak self] _, completion in
+                self?.showCodeDetail(info)
+                completion()
+            }
+            return row
+        }
+        return [CPListSection(items: rows)]
+    }
+
+    private func showCodeDetail(_ info: TroubleCodeInfo) {
+        let detail = CPInformationTemplate(
+            title: info.code,
+            layout: .leading,
+            items: [
+                CPInformationItem(title: info.title, detail: info.explanation),
+            ],
+            actions: []
+        )
+        interfaceController?.pushTemplate(detail, animated: true, completion: nil)
+    }
+
+    // MARK: Alerts
+
+    /// Pops a full-screen alert for a problem that just started: hot coolant or a new check-engine code.
+    @MainActor
+    private func presentNewAlert(_ services: AppServices) {
+        let current = services.obd.alerts
+        // Once a problem clears, forget it, so it can alert again if it comes back.
+        presentedAlerts.formIntersection(current.map(\.id))
+        guard !isShowingAlert, let next = current.first(where: { !presentedAlerts.contains($0.id) }) else { return }
+        presentedAlerts.insert(next.id)
+        isShowingAlert = true
+
+        let ok = CPAlertAction(title: "OK", style: .default) { [weak self] _ in
+            self?.interfaceController?.dismissTemplate(animated: true) { _, _ in
+                self?.isShowingAlert = false
+            }
+        }
+        // CPAlertTemplate has no separate body text, so the message rides in the title variants (longest first).
+        let alert = CPAlertTemplate(titleVariants: ["\(next.title): \(next.message)", next.title], actions: [ok])
+        interfaceController?.presentTemplate(alert, animated: true) { [weak self] success, _ in
+            if !success { self?.isShowingAlert = false }
+        }
     }
 
     @MainActor
