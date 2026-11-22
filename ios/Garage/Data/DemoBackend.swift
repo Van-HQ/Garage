@@ -7,9 +7,12 @@ import GarageCore
 actor DemoBackend: GarageBackend {
     private var snapshot: GarageSnapshot
     private var trips: [Trip] = []
+    /// Starts with one open code so the Care banner can be seen in demo mode.
+    private var demoCodes: [OpenTroubleCode] = []
 
     init(now: Date = Date()) {
         snapshot = DemoData.snapshot(now: now)
+        if let first = snapshot.vehicles.first { demoCodes = [OpenTroubleCode(vehicleID: first.id, code: "P0456")] }
     }
 
     func loadSnapshot() async throws -> GarageSnapshot { snapshot }
@@ -59,7 +62,14 @@ actor DemoBackend: GarageBackend {
 
     func recordTroubleCodes(vehicleID: UUID, codes: [String]) async throws {}
 
-    func markTroubleCodesCleared(vehicleID: UUID) async throws {}
+    func markTroubleCodesCleared(vehicleID: UUID) async throws { demoCodes.removeAll { $0.vehicleID == vehicleID } }
+
+    func reconcileTroubleCodes(vehicleID: UUID, codes: [String]) async throws {
+        demoCodes.removeAll { $0.vehicleID == vehicleID }
+        demoCodes += codes.map { OpenTroubleCode(vehicleID: vehicleID, code: $0) }
+    }
+
+    func loadOpenTroubleCodes() async throws -> [OpenTroubleCode] { demoCodes }
 
     /// Stands in for the database trigger: the vehicle's odometer follows its newest reading by date.
     private func recomputeMileage(for vehicleID: UUID) {

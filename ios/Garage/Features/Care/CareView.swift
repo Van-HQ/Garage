@@ -28,6 +28,7 @@ struct CareView: View {
                     }
 
                     if let vehicle {
+                        openCodesSection(vehicle)
                         statusSection(vehicle)
                         spendingSection(vehicle)
                         historySection(vehicle)
@@ -59,6 +60,35 @@ struct CareView: View {
             }
             .sheet(item: $openedLog) { LogDetailView(log: $0) }
             .sheet(item: $logPrefill) { LogEntryView(prefill: $0) }
+        }
+    }
+
+    @ViewBuilder
+    private func openCodesSection(_ vehicle: Vehicle) -> some View {
+        let codes = store.openCodes(for: vehicle)
+        if !codes.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader("Check engine")
+                Panel {
+                    VStack(alignment: .leading, spacing: 12) {
+                        ForEach(codes, id: \.self) { code in
+                            let info = TroubleCodes.info(for: code)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(code)
+                                    .font(.system(.footnote, design: .monospaced).weight(.semibold))
+                                    .foregroundStyle(Theme.statusSoon)
+                                Text(info.title)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(Theme.foreground)
+                                Text(info.explanation)
+                                    .font(.footnote)
+                                    .foregroundStyle(Theme.muted)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
         }
     }
 

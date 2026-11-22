@@ -11,6 +11,8 @@ final class GarageStore {
     private(set) var hasLoaded = false
     private(set) var isLoading = false
     var loadError: String?
+    /// Trouble codes the car reported that are still open. Empty if the tables aren't set up.
+    private(set) var openCodes: [OpenTroubleCode] = []
 
     let backend: GarageBackend
 
@@ -25,6 +27,7 @@ final class GarageStore {
             snapshot = try await backend.loadSnapshot()
             loadError = nil
             hasLoaded = true
+            await refreshOpenCodes()
         } catch is CancellationError {
             // A newer refresh replaced this one.
         } catch {
@@ -37,6 +40,16 @@ final class GarageStore {
         snapshot = GarageSnapshot()
         hasLoaded = false
         loadError = nil
+        openCodes = []
+    }
+
+    /// A bonus on top of the main data: if the OBD tables are missing, the rest of the app still works.
+    func refreshOpenCodes() async {
+        openCodes = (try? await backend.loadOpenTroubleCodes()) ?? []
+    }
+
+    func openCodes(for vehicle: Vehicle) -> [String] {
+        openCodes.filter { $0.vehicleID == vehicle.id }.map(\.code).sorted()
     }
 
     func logMaintenance(_ draft: MaintenanceDraft, photos: [Data]) async throws -> Int {

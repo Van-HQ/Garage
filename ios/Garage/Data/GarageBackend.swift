@@ -80,6 +80,13 @@ protocol GarageBackend: Sendable {
 
     /// Marks this vehicle's open codes as cleared.
     func markTroubleCodesCleared(vehicleID: UUID) async throws
+
+    /// Brings the saved list in line with what the car just reported: new codes are
+    /// added, and open codes the car no longer reports are marked cleared.
+    func reconcileTroubleCodes(vehicleID: UUID, codes: [String]) async throws
+
+    /// Every code still open, across all vehicles.
+    func loadOpenTroubleCodes() async throws -> [OpenTroubleCode]
 }
 
 enum BackendError: LocalizedError {

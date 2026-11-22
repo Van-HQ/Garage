@@ -46,3 +46,11 @@ Native SwiftUI port of the Garage web app (Next.js in the repo root). Personal u
 
 - `Garage/Data/LocationSpeedSource.swift` supplies GPS speed while an OBD connection is up. `TripController` uses it only when the car hasn't reported speed for 5 s, so the two sources never double-count. A trip's `distance_source` is `obd`, `gps` or `mixed`.
 - Needs the "location" background mode (in `project.yml`) so GPS keeps running with the phone locked.
+
+## CarPlay pop-ups
+
+- Tabs: Care (open check-engine codes first), Drive, Codes. Everything that wants a full-screen pop-up goes through one queue in `CarPlaySceneDelegate` (drive alerts, last trip summary, newly overdue maintenance), so they never collide.
+- The trip summary is saved when a trip ends (`CarPlayMemory`) and shown once, if under 12 h old. A drive normally ends after CarPlay disconnects, so it usually appears on the next connection.
+- Maintenance pop-ups fire on the change to overdue, not on every connect. The first run only records a baseline.
+- Open codes: every code read is reconciled into `dtc_events` (new codes added, codes the car no longer reports cleared), so Care and CarPlay show them without the adapter.
+

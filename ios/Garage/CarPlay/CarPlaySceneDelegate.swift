@@ -8,9 +8,13 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private var interfaceController: CPInterfaceController?
     private var driveTemplate: CPInformationTemplate?
     private var codesTemplate: CPListTemplate?
-    /// Alerts already shown this session, so each problem interrupts the driver once.
+    /// Drive alerts already queued this session, so each problem interrupts the driver once.
     private var presentedAlerts: Set<String> = []
-    private var isShowingAlert = false
+    /// Everything that wants a full-screen pop-up (alerts, trip summary, reminders) waits here,
+    /// so two arriving together can't collide: CarPlay shows one at a time.
+    private struct Modal { let title: String; let message: String }
+    private var modalQueue: [Modal] = []
+    private var isShowingModal = false
     private var refreshTimer: Timer?
 
     func templateApplicationScene(
@@ -33,7 +37,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         driveTemplate = nil
         codesTemplate = nil
         presentedAlerts = []
-        isShowingAlert = false
+        modalQueue = []
+        isShowingModal = false
     }
 
     // MARK: Building the screens
@@ -52,6 +57,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let codes = makeCodesTemplate(services)
         codesTemplate = codes
         show([care, drive, codes])
+        collectModals(services)
+        presentNextModal()
 
         // CarPlay templates don't observe anything, so refresh the drive screen on a timer.
         refreshTimer?.invalidate()
@@ -59,7 +66,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             Task { @MainActor in
                 self?.refreshDrive(services)
                 self?.refreshCodes(services)
-                self?.presentNewAlert(services)
+                self?.collectModals(services)
+                self?.presentNextModal()
             }
         }
     }
@@ -77,9 +85,15 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private func careTemplate(_ services: AppServices) -> CPListTemplate {
         let items: [CPListItem]
         if let vehicle = services.trips.vehicle {
+            let codeRows: [CPListItem] = services.store.openCodes(for: vehicle).map { code in
+                let row = CPListItem(text: "Check engine: \(code)", detailText: TroubleCodes.info(for: code).title)
+                row.setImage(UIImage(systemName: "exclamationmark.triangle.fill")?
+                    .withTintColor(UIColor(Theme.statusOverdue), renderingMode: .alwaysOriginal))
+                return row
+            }
             let statuses = services.store.status(for: vehicle)
                 .sorted { Self.rank($0.status) < Self.rank($1.status) }
-            items = statuses.prefix(12).map { status in
+            items = codeRows + statuses.prefix(12).map { status in
                 // Overdue rows already say "Overdue by …", so don't repeat the label.
                 let detail = status.status == .overdue ? status.detailText : "\(status.status.label) · \(status.detailText)"
                 let row = CPListItem(text: status.type.name, detailText: detail)
@@ -175,27 +189,62 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         interfaceController?.pushTemplate(detail, animated: true, completion: nil)
     }
 
-    // MARK: Alerts
+    // MARK: Pop-ups
 
-    /// Pops a full-screen alert for a problem that just started: hot coolant or a new check-engine code.
+    /// Gathers everything new that deserves a pop-up: drive alerts, the last trip's
+    /// summary, and maintenance items that just turned overdue.
     @MainActor
-    private func presentNewAlert(_ services: AppServices) {
+    private func collectModals(_ services: AppServices) {
+        // Drive problems. Once one clears, forget it, so it can alert again if it returns.
         let current = services.obd.alerts
-        // Once a problem clears, forget it, so it can alert again if it comes back.
         presentedAlerts.formIntersection(current.map(\.id))
-        guard !isShowingAlert, let next = current.first(where: { !presentedAlerts.contains($0.id) }) else { return }
-        presentedAlerts.insert(next.id)
-        isShowingAlert = true
+        for alert in current where !presentedAlerts.contains(alert.id) {
+            presentedAlerts.insert(alert.id)
+            modalQueue.append(Modal(title: alert.title, message: alert.message))
+        }
+
+        // The last trip, once. The drive usually ends after CarPlay has gone, so this shows next connect.
+        if let summary = CarPlayMemory.summaryToShow() {
+            CarPlayMemory.markShown(summary)
+            modalQueue.append(Modal(title: summary.title, message: summary.message))
+        }
+
+        // Maintenance that has just become overdue, not everything that is overdue.
+        guard services.store.hasLoaded else { return }
+        for vehicle in services.store.vehicles {
+            let statuses = services.store.status(for: vehicle)
+            let previous = CarPlayMemory.reminderMemory(for: vehicle.id)
+            let names = ReminderAlerts.newlyOverdue(statuses, previous: previous)
+            let memory = ReminderAlerts.memory(of: statuses)
+            if memory != previous { CarPlayMemory.saveReminderMemory(memory, for: vehicle.id) }
+            if !names.isEmpty {
+                modalQueue.append(Modal(title: "Maintenance overdue", message: "\(vehicle.name): \(ReminderAlerts.message(for: names))"))
+            }
+        }
+    }
+
+    /// Shows the next waiting pop-up, if none is on screen. Dismissing one shows the next.
+    @MainActor
+    private func presentNextModal() {
+        guard !isShowingModal, !modalQueue.isEmpty, let controller = interfaceController else { return }
+        let next = modalQueue.removeFirst()
+        isShowingModal = true
 
         let ok = CPAlertAction(title: "OK", style: .default) { [weak self] _ in
             self?.interfaceController?.dismissTemplate(animated: true) { _, _ in
-                self?.isShowingAlert = false
+                Task { @MainActor in
+                    self?.isShowingModal = false
+                    self?.presentNextModal()
+                }
             }
         }
         // CPAlertTemplate has no separate body text, so the message rides in the title variants (longest first).
-        let alert = CPAlertTemplate(titleVariants: ["\(next.title): \(next.message)", next.title], actions: [ok])
-        interfaceController?.presentTemplate(alert, animated: true) { [weak self] success, _ in
-            if !success { self?.isShowingAlert = false }
+        let alert = CPAlertTemplate(titleVariants: ["\(next.title). \(next.message)", next.title], actions: [ok])
+        controller.presentTemplate(alert, animated: true) { [weak self] success, _ in
+            guard !success else { return }
+            Task { @MainActor in
+                self?.isShowingModal = false
+            }
         }
     }
 

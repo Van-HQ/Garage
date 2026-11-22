@@ -100,6 +100,9 @@ final class TripController {
         let base = [known, queued].compactMap { $0 }.max()
         let item = PendingTrip(trip: trip, odometerAfter: base.map { $0 + Int(trip.distanceMiles.rounded()) })
 
+        let name = store.vehicles.first { $0.id == trip.vehicleID }?.name ?? "Trip"
+        CarPlayMemory.saveSummary(TripSummary(trip: trip, vehicleName: name))
+
         pending.append(item)
         Task {
             await queue.add(item)

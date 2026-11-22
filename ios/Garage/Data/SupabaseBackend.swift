@@ -244,6 +244,33 @@ struct SupabaseBackend: GarageBackend {
         try await client.from("dtc_events").insert(fresh, returning: .minimal).execute()
     }
 
+    func reconcileTroubleCodes(vehicleID: UUID, codes: [String]) async throws {
+        try await recordTroubleCodes(vehicleID: vehicleID, codes: codes)
+
+        struct Open: Decodable { let code: String }
+        let open: [Open] = try await client.from("dtc_events").select("code")
+            .eq("vehicle_id", value: vehicleID)
+            .is("cleared_at", value: nil)
+            .execute().value
+        let gone = open.map(\.code).filter { !codes.contains($0) }
+        guard !gone.isEmpty else { return }
+        struct Patch: Encodable { let cleared_at: Date }
+        try await client.from("dtc_events")
+            .update(Patch(cleared_at: Date()), returning: .minimal)
+            .eq("vehicle_id", value: vehicleID)
+            .is("cleared_at", value: nil)
+            .in("code", values: gone)
+            .execute()
+    }
+
+    func loadOpenTroubleCodes() async throws -> [OpenTroubleCode] {
+        struct Row: Decodable { let vehicle_id: UUID; let code: String }
+        let rows: [Row] = try await client.from("dtc_events").select("vehicle_id, code")
+            .is("cleared_at", value: nil)
+            .execute().value
+        return rows.map { OpenTroubleCode(vehicleID: $0.vehicle_id, code: $0.code) }
+    }
+
     func markTroubleCodesCleared(vehicleID: UUID) async throws {
         struct Patch: Encodable { let cleared_at: Date }
         try await client.from("dtc_events")

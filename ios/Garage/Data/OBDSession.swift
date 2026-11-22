@@ -28,6 +28,8 @@ final class OBDSession {
 
     /// Called with every batch of readings, as they arrive. Trip recording listens here.
     var onReadings: (([OBDReading]) -> Void)?
+    /// Called with each trouble-code read, so the app can save it.
+    var onCodes: (@MainActor ([String]) -> Void)?
     /// Called when the adapter connects and starts delivering readings.
     var onConnect: (() -> Void)?
     /// Called when the connection ends: stopped by the user, dropped, or failed.
@@ -89,6 +91,7 @@ final class OBDSession {
         let previous = Set(troubleCodes)
         troubleCodes = codes
         hasReadCodes = true
+        onCodes?(codes)
         // Alerts for codes the car no longer reports go away; new codes add one.
         alerts.removeAll { $0.kind == .checkEngine && !codes.contains(String($0.id.dropFirst("code-".count))) }
         for alert in DriveAlerts.newCodes(previous: previous, current: codes) where !alerts.contains(alert) {

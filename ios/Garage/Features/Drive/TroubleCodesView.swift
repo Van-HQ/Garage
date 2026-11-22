@@ -96,10 +96,7 @@ struct TroubleCodesView: View {
             let codes = try await obd.source.readTroubleCodes()
             phase = .loaded(codes.map(TroubleCodes.info(for:)))
             obd.noteTroubleCodes(codes)
-            // Keeping a history is a bonus: if the tables aren't set up yet, showing the codes still works.
-            if let vehicle = trips.vehicle {
-                try? await store.backend.recordTroubleCodes(vehicleID: vehicle.id, codes: codes)
-            }
+            // Saving the history happens in OBDSession.onCodes.
         } catch {
             phase = .failed(error.localizedDescription)
         }

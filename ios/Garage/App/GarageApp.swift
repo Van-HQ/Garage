@@ -38,7 +38,16 @@ struct AppServices {
         self.store = store
         let obd = OBDSession(source: Self.makeSource(simulated: Self.wantsSimulator))
         self.obd = obd
-        self.trips = TripController(obd: obd, store: store)
+        let trips = TripController(obd: obd, store: store)
+        self.trips = trips
+        // Each trouble-code read is saved, so the Care screen and CarPlay can show open codes without the adapter.
+        obd.onCodes = { [weak store, weak trips] codes in
+            guard let store, let vehicle = trips?.vehicle else { return }
+            Task {
+                try? await store.backend.reconcileTroubleCodes(vehicleID: vehicle.id, codes: codes)
+                await store.refreshOpenCodes()
+            }
+        }
     }
 
     static let simulatorKey = "obd.useSimulator"
