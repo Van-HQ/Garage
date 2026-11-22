@@ -34,3 +34,9 @@ Native SwiftUI port of the Garage web app (Next.js in the repo root). Personal u
 - Commit often in small commits. Prefer solid foundations over quick prototypes.
 - After each task, explain what changed and why.
 - After pushing iOS updates, end the reply with `~/Desktop/Projects/Garage/ios/update.sh` and a reminder to press ⌘R.
+
+## CarPlay
+
+- Code: `Garage/CarPlay/CarPlaySceneDelegate.swift` (Care list + live Drive tabs), routed by `Garage/App/AppDelegate.swift`. The scene manifest is in `project.yml`.
+- Simulator builds pick up `Garage/Garage.entitlements` automatically. Test with the Simulator's I/O > External Displays > CarPlay.
+- Device builds do not use the entitlement until the matching profile exists. Once Apple's approved category is on the App ID and a profile is generated, add `CODE_SIGN_ENTITLEMENTS = Garage/Garage.entitlements` to `Config/Config.local.xcconfig`. The key in the entitlements file must match the approved category, or signing fails.

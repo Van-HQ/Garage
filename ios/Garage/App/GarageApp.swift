@@ -3,7 +3,8 @@ import GarageCore
 
 @main
 struct GarageApp: App {
-    @State private var services = AppServices.make()
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    private let services = AppServices.shared
 
     var body: some Scene {
         WindowGroup {
@@ -39,6 +40,9 @@ struct AppServices {
         self.obd = obd
         self.trips = TripController(obd: obd, store: store)
     }
+
+    /// One shared set, so the phone and CarPlay scenes use the same data and OBD session.
+    static let shared: AppServices? = make()
 
     /// Nil when the Supabase settings are missing from the build.
     static func make() -> AppServices? {
