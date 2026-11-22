@@ -19,4 +19,12 @@ Vehicle maintenance tracker for my 2024 Toyota Tacoma TRD Sport and RAV4 XLE.
 ## Note
 Verified against the repo on 2026-11-15: table names, RLS, and storage paths match `supabase/schema.sql`. The earlier GRANT line was removed because the repo doesn't show it; confirm in Supabase before relying on it.
 
+## Tweaks and design
+- Tweak list: Claude Doc "Garage Tweaks" (https://claude.ai/artifact/FVGVyoYEHEsJzUtCAb84ur).
+- Design canvas: "Garage Design" (https://claude.ai/artifact/3ZJBxuALy947Q1bvTKBu7W). Put UI mockups and other design work there, not in repo files.
+- When I ask for a change, add it under "Tweaks" in the doc as [ ] open.
+- Mark [~] when you start an item, [x] when it's done and verified, and [?] when it needs my decision.
+- Don't reword my existing items without asking.
+- If the Claude Docs or artifact tools aren't available in this session, say so. Don't guess at the doc's contents.
+
 @AGENTS.md
