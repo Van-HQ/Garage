@@ -12,6 +12,8 @@ public struct CostBreakdown: Hashable, Sendable {
     public let thisYearTotal: Double
     /// Largest amount first.
     public let byCategory: [CategoryAmount]
+    /// Same as `byCategory`, counting only this calendar year.
+    public let thisYearByCategory: [CategoryAmount]
 }
 
 public func computeCostBreakdown(
@@ -28,6 +30,8 @@ public func computeCostBreakdown(
     var thisYearTotal = 0.0
     var order: [MaintenanceCategory] = []
     var amounts: [MaintenanceCategory: Double] = [:]
+    var yearOrder: [MaintenanceCategory] = []
+    var yearAmounts: [MaintenanceCategory: Double] = [:]
 
     for log in logs where log.vehicleID == vehicleID {
         guard let amount = log.cost else { continue }
@@ -38,11 +42,19 @@ public func computeCostBreakdown(
         let category = log.maintenanceTypeID.flatMap { typeByID[$0] }?.category ?? .custom
         if amounts[category] == nil { order.append(category) }
         amounts[category, default: 0] += amount
+        if calendar.component(.year, from: log.performedAt) == currentYear {
+            if yearAmounts[category] == nil { yearOrder.append(category) }
+            yearAmounts[category, default: 0] += amount
+        }
     }
 
     let byCategory = order
         .map { CostBreakdown.CategoryAmount(category: $0, amount: amounts[$0] ?? 0) }
         .stableSorted { $0.amount > $1.amount }
 
-    return CostBreakdown(total: total, thisYearTotal: thisYearTotal, byCategory: byCategory)
+    let thisYearByCategory = yearOrder
+        .map { CostBreakdown.CategoryAmount(category: $0, amount: yearAmounts[$0] ?? 0) }
+        .stableSorted { $0.amount > $1.amount }
+
+    return CostBreakdown(total: total, thisYearTotal: thisYearTotal, byCategory: byCategory, thisYearByCategory: thisYearByCategory)
 }

@@ -13,6 +13,7 @@ struct TripsView: View {
     }
 
     @State private var phase: Phase = .loading
+    @State private var confirmingDiscard = false
 
     var body: some View {
         ScrollView {
@@ -20,8 +21,11 @@ struct TripsView: View {
                 if !trips.pending.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
                         SectionHeader(title: "Waiting to upload") {
-                            Button("Retry") { Task { await trips.syncPending(); await load() } }
-                                .disabled(trips.isSyncing)
+                            HStack(spacing: 16) {
+                                Button("Discard", role: .destructive) { confirmingDiscard = true }
+                                Button("Retry") { Task { await trips.syncPending(); await load() } }
+                                    .disabled(trips.isSyncing)
+                            }
                         }
                         ListPanel(items: trips.pending) { item in
                             row(item.trip.summary, pending: true)
@@ -57,6 +61,11 @@ struct TripsView: View {
         .background(Theme.background)
         .navigationTitle("Trips")
         .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog("Throw away the trips waiting to upload?", isPresented: $confirmingDiscard, titleVisibility: .visible) {
+            Button("Discard trips", role: .destructive) { trips.discardPending() }
+        } message: {
+            Text("They are deleted from this iPhone and never uploaded.")
+        }
         .task { await load() }
         .refreshable { await load() }
     }

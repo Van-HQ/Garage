@@ -1,7 +1,8 @@
 import SwiftUI
+import Charts
 import GarageCore
 
-/// Miles since tracking started, plus month-over-month change. Port of the web app's StatsCard.
+/// Miles driven each month as bars, the average, and how the latest month compares. Port of the web app's StatsCard.
 struct StatsCard: View {
     let vehicle: Vehicle
     let points: [TrendPoint]
@@ -11,30 +12,35 @@ struct StatsCard: View {
             let months = computeMonthlyStats(points)
             VStack(alignment: .leading, spacing: 12) {
                 SectionHeader("Stats · \(vehicle.name)")
-                Panel {
-                    VStack(alignment: .leading, spacing: 14) {
-                        HStack(alignment: .bottom) {
+                Panel(padding: 20) {
+                    VStack(alignment: .leading, spacing: 18) {
+                        HStack(alignment: .firstTextBaseline) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Since you started tracking")
-                                    .font(.caption)
-                                    .foregroundStyle(Theme.muted)
                                 Text("\((last.mileage - first.mileage).grouped) mi")
-                                    .font(.system(size: 28, weight: .bold))
+                                    .font(.system(size: 30, weight: .bold))
                                     .monospacedDigit()
                                     .foregroundStyle(Theme.foreground)
+                                Text("since you started tracking")
+                                    .font(.footnote)
+                                    .foregroundStyle(Theme.muted)
                             }
                             Spacer()
-                            VStack(alignment: .trailing, spacing: 2) {
-                                Text("\(first.date.shortDay) → \(last.date.shortDay)")
-                                Text("\(first.mileage.grouped) → \(last.mileage.grouped)")
+                            if !months.isEmpty {
+                                VStack(alignment: .trailing, spacing: 2) {
+                                    Text("\(average(months).grouped)")
+                                        .font(.system(size: 22, weight: .semibold))
+                                        .monospacedDigit()
+                                        .foregroundStyle(Theme.foreground)
+                                    Text("mi / month")
+                                        .font(.footnote)
+                                        .foregroundStyle(Theme.muted)
+                                }
                             }
-                            .font(.caption)
-                            .monospacedDigit()
-                            .foregroundStyle(Theme.muted)
                         }
 
                         if !months.isEmpty {
-                            monthTable(months)
+                            chart(months)
+                            if let latest = months.first { latestLine(latest) }
                         }
                     }
                 }
@@ -42,62 +48,50 @@ struct StatsCard: View {
         }
     }
 
-    private func monthTable(_ months: [MonthlyStat]) -> some View {
-        let average = jsStyleAverage(months.map(\.month.miles))
-        return VStack(spacing: 0) {
-            HStack {
-                Text("MONTH").frame(width: 52, alignment: .leading)
-                Text("MILES").frame(maxWidth: .infinity, alignment: .trailing)
-                Text("VS. PRIOR").frame(maxWidth: .infinity, alignment: .trailing)
-            }
-            .font(.system(size: 11, weight: .semibold))
-            .kerning(0.4)
-            .foregroundStyle(Theme.muted)
-            .padding(.bottom, 6)
-
-            ForEach(months, id: \.self) { stat in
-                Divider().overlay(Theme.hairline)
-                HStack(alignment: .firstTextBaseline) {
-                    Text(stat.month.shortLabel)
-                        .foregroundStyle(Theme.muted)
-                        .frame(width: 52, alignment: .leading)
+    private func chart(_ months: [MonthlyStat]) -> some View {
+        let ordered = Array(months.reversed())
+        let latestLabel = months.first?.month.shortLabel
+        return Chart(ordered, id: \.self) { stat in
+            BarMark(x: .value("Month", stat.month.shortLabel), y: .value("Miles", stat.month.miles))
+                .cornerRadius(6)
+                .foregroundStyle(stat.month.shortLabel == latestLabel ? Theme.accent : Theme.muted.opacity(0.35))
+                .annotation(position: .top, spacing: 4) {
                     Text(stat.month.miles.grouped)
-                        .fontWeight(.medium)
-                        .foregroundStyle(Theme.foreground)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
-                    changeText(stat)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .font(.system(size: 11, weight: .medium))
+                        .monospacedDigit()
+                        .foregroundStyle(stat.month.shortLabel == latestLabel ? Theme.foreground : Theme.muted)
                 }
-                .font(.subheadline)
-                .monospacedDigit()
-                .padding(.vertical, 7)
-            }
-
-            Divider().overlay(Theme.hairline)
-            Text("Average \(average.grouped) mi/mo")
-                .font(.caption)
-                .foregroundStyle(Theme.muted)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 8)
         }
+        .chartYAxis(.hidden)
+        .chartXAxis {
+            AxisMarks { _ in AxisValueLabel().font(.system(size: 11)).foregroundStyle(Theme.muted) }
+        }
+        .frame(height: 150)
     }
 
-    private func changeText(_ stat: MonthlyStat) -> Text {
-        guard let change = stat.changeMiles else { return Text("—").foregroundStyle(Theme.muted) }
-        let color = change == 0 ? Theme.muted : change > 0 ? Theme.statusOK : Theme.statusOverdue
-        let percent: String
-        if let pct = stat.changePercent {
-            let arrow = pct > 0 ? "▲ " : pct < 0 ? "▼ " : ""
-            percent = "\(arrow)\(pct.signedGrouped)%"
-        } else {
-            percent = "—"
+    private func latestLine(_ stat: MonthlyStat) -> some View {
+        HStack(spacing: 6) {
+            Text("\(stat.month.shortLabel) vs. last month")
+                .foregroundStyle(Theme.muted)
+            Spacer()
+            if let change = stat.changeMiles {
+                let color = change == 0 ? Theme.muted : change > 0 ? Theme.statusOK : Theme.statusOverdue
+                let arrow = change > 0 ? "▲" : change < 0 ? "▼" : ""
+                Text("\(arrow) \(stat.changePercent.map { "\($0.signedGrouped)%" } ?? "—")")
+                    .fontWeight(.semibold)
+                    .foregroundStyle(color)
+                Text("(\(change.signedGrouped) mi)").foregroundStyle(Theme.muted)
+            } else {
+                Text("—").foregroundStyle(Theme.muted)
+            }
         }
-        return Text(percent).foregroundStyle(color)
-            + Text(" (\(change.signedGrouped))").font(.caption).foregroundStyle(Theme.muted)
+        .font(.footnote)
+        .monospacedDigit()
     }
 
     /// Mean rounded the way the web app's Math.round does (the values are never negative here).
-    private func jsStyleAverage(_ values: [Int]) -> Int {
+    private func average(_ months: [MonthlyStat]) -> Int {
+        let values = months.map(\.month.miles)
         guard !values.isEmpty else { return 0 }
         return Int((Double(values.reduce(0, +)) / Double(values.count) + 0.5).rounded(.down))
     }

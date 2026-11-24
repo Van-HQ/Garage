@@ -54,3 +54,10 @@ final class Appearance: @unchecked Sendable {
         ("Teal", 0x2EC4B6), ("Blue", 0x4C9AFF), ("Purple", 0x9B7BFF), ("Pink", 0xFF6FAE),
     ]
 }
+
+extension View {
+    /// Applies the user's light/dark choice. Sheets need it too, or they keep the look they opened with.
+    func appliesAppearance() -> some View {
+        preferredColorScheme(Appearance.shared.mode.scheme)
+    }
+}

@@ -13,8 +13,7 @@ struct DriveView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
-                    statusBar
-                    tripPanel
+                    connectionRow
 
                     HStack(spacing: 14) {
                         DialGauge(
@@ -31,23 +30,7 @@ struct DriveView: View {
                         )
                     }
 
-                    NavigationLink {
-                        TroubleCodesView()
-                    } label: {
-                        Panel(padding: 14) {
-                            HStack(spacing: 10) {
-                                IconTile(systemName: "engine.combustion", color: Theme.statusSoon)
-                                Text("Trouble codes")
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundStyle(Theme.foreground)
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundStyle(Theme.muted)
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
+                    actionsPanel
 
                     LazyVGrid(columns: columns, spacing: 10) {
                         tile("Coolant", obd.value(.coolantTemperature).map(fahrenheit), unit: "°F", symbol: "thermometer.medium")
@@ -81,93 +64,122 @@ struct DriveView: View {
         if let run = obd.value(.runTime) { tile("Engine run time", run / 60, unit: "min", symbol: "clock") }
     }
 
-    private var tripPanel: some View {
-        Panel(padding: 14) {
-            VStack(alignment: .leading, spacing: 12) {
-                if store.vehicles.count > 1 {
-                    Picker("Vehicle", selection: Binding(
-                        get: { trips.vehicle?.id },
-                        set: { trips.vehicleID = $0 }
-                    )) {
-                        ForEach(store.vehicles) { Text($0.name).tag(Optional($0.id)) }
-                    }
-                    .pickerStyle(.segmented)
-                    .disabled(trips.isRecording)
+    private var connectionRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                HStack(spacing: 8) {
+                    Circle().fill(statusColor).frame(width: 8, height: 8)
+                    Text(statusTitle)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Theme.foreground)
                 }
+                .padding(.horizontal, 16)
+                .frame(height: 44)
+                .background(Theme.elevated, in: Capsule())
+                .overlay(Capsule().strokeBorder(Theme.hairline))
+                Spacer()
+                Button(obd.isActive ? "Stop" : "Start") {
+                    obd.isActive ? obd.stop() : obd.start()
+                }
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.accent)
+                .frame(minHeight: 44)
+                .padding(.horizontal, 6)
+            }
+            if !statusDetail.isEmpty {
+                Text(statusDetail)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.muted)
+                    .padding(.horizontal, 4)
+            }
+            if store.vehicles.count > 1 {
+                Picker("Vehicle", selection: Binding(
+                    get: { trips.vehicle?.id },
+                    set: { trips.vehicleID = $0 }
+                )) {
+                    ForEach(store.vehicles) { Text($0.name).tag(Optional($0.id)) }
+                }
+                .pickerStyle(.segmented)
+                .disabled(trips.isRecording)
+            }
+        }
+    }
 
-                HStack(spacing: 10) {
-                    IconTile(systemName: "road.lanes", color: trips.isRecording ? Theme.statusOK : Theme.muted)
-                    VStack(alignment: .leading, spacing: 1) {
-                        if let progress = trips.progress {
-                            Text("Recording · \(progress.distanceMiles.oneDecimal) mi")
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundStyle(Theme.foreground)
-                                .monospacedDigit()
-                            Text("\(progress.lastUpdate.timeIntervalSince(progress.startedAt).durationText) so far")
-                                .font(.caption)
-                                .foregroundStyle(Theme.muted)
-                        } else {
-                            Text("Trip recording")
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundStyle(Theme.foreground)
-                            Text(obd.isActive ? "Starts when the vehicle moves" : "Start the connection to record trips")
-                                .font(.caption)
-                                .foregroundStyle(Theme.muted)
-                        }
+    /// Trip recording, past trips and trouble codes in one grouped card.
+    private var actionsPanel: some View {
+        Panel(padding: 0) {
+            VStack(spacing: 0) {
+                HStack(spacing: 14) {
+                    Circle().fill(trips.isRecording ? Theme.statusOK : Theme.muted.opacity(0.5)).frame(width: 10, height: 10)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Trip recording")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(Theme.foreground)
+                        Text(recordingDetail)
+                            .font(.footnote)
+                            .foregroundStyle(Theme.muted)
+                            .monospacedDigit()
                     }
                     Spacer()
                     if trips.isRecording {
                         Button("End trip") { trips.finishCurrentTrip() }
-                            .buttonStyle(.bordered)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(Theme.accent)
+                            .frame(minHeight: 44)
                     }
                 }
+                .padding(.horizontal, 20)
+                .frame(minHeight: 64)
 
-                NavigationLink {
-                    TripsView()
-                } label: {
-                    HStack {
-                        Text(trips.pending.isEmpty ? "Trips" : "Trips · \(trips.pending.count) waiting to upload")
-                            .font(.footnote.weight(.medium))
-                            .foregroundStyle(trips.pending.isEmpty ? Theme.accent : Theme.statusSoon)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(Theme.muted)
-                    }
+                Divider().overlay(Theme.hairline).padding(.leading, 20)
+                NavigationLink { TripsView() } label: {
+                    linkRow(title: "Trips",
+                            detail: trips.pending.isEmpty ? "Recorded drives" : "\(trips.pending.count) waiting to upload",
+                            warn: !trips.pending.isEmpty)
+                }
+                .buttonStyle(.plain)
+
+                Divider().overlay(Theme.hairline).padding(.leading, 20)
+                NavigationLink { TroubleCodesView() } label: {
+                    linkRow(title: "Trouble codes", detail: "Read stored codes", warn: false)
                 }
                 .buttonStyle(.plain)
             }
         }
     }
 
-    private var statusBar: some View {
-        Panel(padding: 14) {
-            HStack(spacing: 10) {
-                Circle().fill(statusColor).frame(width: 8, height: 8)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(statusTitle)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Theme.foreground)
-                    Text(statusDetail)
-                        .font(.caption)
-                        .foregroundStyle(Theme.muted)
-                }
-                Spacer()
-                Button(obd.isActive ? "Stop" : "Start") {
-                    obd.isActive ? obd.stop() : obd.start()
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(obd.isActive ? Theme.muted : Theme.accent)
-                .foregroundStyle(obd.isActive ? Theme.background : Theme.accentForeground)
-            }
+    private var recordingDetail: String {
+        if let progress = trips.progress {
+            return "\(progress.distanceMiles.oneDecimal) mi · \(progress.lastUpdate.timeIntervalSince(progress.startedAt).durationText) so far"
         }
+        return obd.isActive ? "Starts when the vehicle moves" : "Start the connection to record trips"
+    }
+
+    private func linkRow(title: String, detail: String, warn: Bool) -> some View {
+        HStack(spacing: 14) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(Theme.foreground)
+                Text(detail)
+                    .font(.footnote)
+                    .foregroundStyle(warn ? Theme.statusSoon : Theme.muted)
+            }
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Theme.muted)
+        }
+        .padding(.horizontal, 20)
+        .frame(minHeight: 64)
+        .contentShape(Rectangle())
     }
 
     private var statusTitle: String {
         switch obd.state {
         case .disconnected: "Not connected"
         case .connecting: "Connecting…"
-        case .connected(let adapter): "Connected to \(adapter)"
+        case .connected(let adapter): "Connected · \(adapter)"
         case .failed: "Connection failed"
         }
     }
@@ -175,9 +187,7 @@ struct DriveView: View {
     private var statusDetail: String {
         if case .failed(let message) = obd.state { return message }
         // Said plainly on screen so made-up numbers are never mistaken for the truck's.
-        return obd.source is SimulatedOBDSource
-            ? "Simulated drive, not real vehicle data"
-            : obd.source.displayName
+        return obd.source is SimulatedOBDSource ? "Simulated drive, not real vehicle data" : ""
     }
 
     private var statusColor: Color {

@@ -57,6 +57,7 @@ struct SettingsView: View {
                         .accessibilityLabel("Close")
                 }
             }
+            .appliesAppearance()
             .confirmationDialog("Sign out of Garage on this iPhone?", isPresented: $confirmingSignOut, titleVisibility: .visible) {
                 Button("Sign out", role: .destructive) {
                     dismiss()

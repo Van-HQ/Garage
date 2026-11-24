@@ -32,6 +32,9 @@ final class CostBreakdownTests: XCTestCase {
         // The brake fluid job was in 2024.
         XCTAssertEqual(result.thisYearTotal, 85, accuracy: 0.0001)
         XCTAssertEqual(result.byCategory.map(\.category), [.custom, .oil, .wash])
+        // The by-type split for this year adds up to this year's total, and leaves out the 2024 job.
+        XCTAssertEqual(result.thisYearByCategory.map(\.amount).reduce(0, +), 85, accuracy: 0.0001)
+        XCTAssertLessThan(result.thisYearByCategory.map(\.amount).reduce(0, +), result.byCategory.map(\.amount).reduce(0, +))
     }
 
     func testNoCostsGivesAnEmptyBreakdown() {

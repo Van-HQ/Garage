@@ -20,7 +20,7 @@ struct GarageApp: App {
                 }
             }
             .tint(Theme.accent)
-            .preferredColorScheme(Appearance.shared.mode.scheme)
+            .appliesAppearance()
         }
     }
 }
@@ -49,6 +49,15 @@ struct AppServices {
                 await store.refreshOpenCodes()
             }
         }
+    }
+
+    /// The debug-only demo mode, which uses a fake backend, so nothing real can be polluted.
+    static var isDemo: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains("-demo")
+        #else
+        return false
+        #endif
     }
 
     static let simulatorKey = "obd.useSimulator"

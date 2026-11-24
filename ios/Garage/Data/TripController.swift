@@ -25,6 +25,7 @@ final class TripController {
     /// How long the car can stay silent on speed before GPS fills in.
     private static let carSpeedStaleAfter: TimeInterval = 5
     private static let vehicleKey = "drive.vehicleID"
+    private static let wipedSimulatedKey = "trips.wipedSimulated.v1"
 
     /// The vehicle being driven. Defaults to the first one; remembered between launches.
     var vehicleID: UUID? {
@@ -47,6 +48,11 @@ final class TripController {
         location.onSpeed = { [weak self] reading in self?.handleGPS(reading) }
         Task { [weak self] in
             guard let self else { return }
+            // One-time clean-out: any trips queued before now came from the simulated drive.
+            if !UserDefaults.standard.bool(forKey: Self.wipedSimulatedKey) {
+                await self.queue.clear()
+                UserDefaults.standard.set(true, forKey: Self.wipedSimulatedKey)
+            }
             self.pending = await self.queue.all()
         }
     }
@@ -72,6 +78,8 @@ final class TripController {
 
     private func ingest(_ readings: [OBDReading], fromGPS: Bool) {
         guard let vehicle else { return }
+        // A made-up drive must never become a saved trip or add miles to a real odometer.
+        if obd.source is SimulatedOBDSource, !AppServices.isDemo { return }
         if recorder?.vehicleID != vehicle.id {
             // Only reachable between trips: the picker is locked while one is recording.
             recorder = TripRecorder(vehicleID: vehicle.id)
@@ -79,6 +87,12 @@ final class TripController {
         let finished = recorder?.ingest(readings, fromGPS: fromGPS)
         progress = recorder?.progress
         if let finished { enqueue(finished) }
+    }
+
+    /// Throws away trips that haven't uploaded yet.
+    func discardPending() {
+        pending = []
+        Task { await queue.clear() }
     }
 
     /// The user tapped End, or the adapter went away.

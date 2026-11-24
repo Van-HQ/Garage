@@ -46,14 +46,14 @@ struct HomeView: View {
                 }
             }
             .refreshable { await store.refresh() }
-            .sheet(isPresented: $showSettings) { SettingsView() }
-            .sheet(item: $logPrefill) { LogEntryView(prefill: $0) }
+            .sheet(isPresented: $showSettings) { SettingsView().appliesAppearance() }
+            .sheet(item: $logPrefill) { LogEntryView(prefill: $0).appliesAppearance() }
             .sheet(item: $detailItem) { item in
                 if let vehicle {
                     CareItemDetailView(item: item, vehicle: vehicle) { logPrefill = $0 }
                 }
             }
-            .sheet(item: $openedLog) { LogDetailView(log: $0) }
+            .sheet(item: $openedLog) { LogDetailView(log: $0).appliesAppearance() }
         }
     }
 

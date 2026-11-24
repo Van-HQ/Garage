@@ -53,6 +53,12 @@ actor TripQueue {
         save()
     }
 
+    /// Throws away everything waiting, without uploading it.
+    func clear() {
+        items = []
+        save()
+    }
+
     private func save() {
         guard let data = try? JSONEncoder().encode(items) else { return }
         // Atomic, so a crash mid-write can't leave a half-written queue.

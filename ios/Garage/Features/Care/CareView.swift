@@ -58,8 +58,8 @@ struct CareView: View {
                     CareItemDetailView(item: item, vehicle: vehicle) { logPrefill = $0 }
                 }
             }
-            .sheet(item: $openedLog) { LogDetailView(log: $0) }
-            .sheet(item: $logPrefill) { LogEntryView(prefill: $0) }
+            .sheet(item: $openedLog) { LogDetailView(log: $0).appliesAppearance() }
+            .sheet(item: $logPrefill) { LogEntryView(prefill: $0).appliesAppearance() }
         }
     }
 
