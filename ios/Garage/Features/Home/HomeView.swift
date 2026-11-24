@@ -35,15 +35,6 @@ struct HomeView: View {
                     Button { showSettings = true } label: { Image(systemName: "gearshape") }
                         .accessibilityLabel("Settings")
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        logPrefill = LogPrefill(vehicleID: vehicle?.id)
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                    .accessibilityLabel("Log entry")
-                    .disabled(store.vehicles.isEmpty)
-                }
             }
             .refreshable { await store.refresh() }
             .sheet(isPresented: $showSettings) { SettingsView().appliesAppearance() }

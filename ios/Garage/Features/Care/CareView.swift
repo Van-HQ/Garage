@@ -28,6 +28,7 @@ struct CareView: View {
                     }
 
                     if let vehicle {
+                        summaryCard(vehicle)
                         openCodesSection(vehicle)
                         statusSection(vehicle)
                         spendingSection(vehicle)
@@ -41,17 +42,6 @@ struct CareView: View {
             }
             .background(Theme.background)
             .navigationTitle("Maintenance")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        logPrefill = LogPrefill(vehicleID: vehicle?.id)
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                    .accessibilityLabel("Log entry")
-                    .disabled(store.vehicles.isEmpty)
-                }
-            }
             .refreshable { await store.refresh() }
             .sheet(item: $detailItem) { item in
                 if let vehicle {
@@ -61,6 +51,32 @@ struct CareView: View {
             .sheet(item: $openedLog) { LogDetailView(log: $0).appliesAppearance() }
             .sheet(item: $logPrefill) { LogEntryView(prefill: $0).appliesAppearance() }
         }
+    }
+
+    /// Overdue, due soon and on track at a glance.
+    private func summaryCard(_ vehicle: Vehicle) -> some View {
+        let status = store.status(for: vehicle)
+        let overdue = status.filter { $0.status == .overdue }.count
+        let soon = status.filter { $0.status == .dueSoon }.count
+        let onTrack = status.count - overdue - soon
+        return Panel(padding: 20) {
+            HStack(alignment: .top) {
+                summaryStat(overdue, "Overdue", Theme.statusOverdue)
+                summaryStat(soon, "Due soon", Theme.statusSoon)
+                summaryStat(onTrack, "On track", Theme.statusOK)
+            }
+        }
+    }
+
+    private func summaryStat(_ count: Int, _ label: String, _ color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("\(count)")
+                .font(.system(size: 32, weight: .bold))
+                .monospacedDigit()
+                .foregroundStyle(color)
+            Text(label).font(.footnote).foregroundStyle(Theme.muted)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder

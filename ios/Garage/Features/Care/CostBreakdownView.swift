@@ -15,13 +15,16 @@ struct CostBreakdownView: View {
     private var total: Double { range == .year ? data.thisYearTotal : data.total }
     private var entries: [CostBreakdown.CategoryAmount] { range == .year ? data.thisYearByCategory : data.byCategory }
 
-    private static let palette: [UInt32] = [0xFF7A4D, 0x4C9AFF, 0x5BD27D, 0xF5B14D, 0x9B7BFF, 0x2EC4B6, 0xFF6FAE]
-
-    /// The biggest slice takes the accent; the rest take other colors, never one that matches it.
+    /// Shades of the accent, brightest for the biggest slice, so the chart matches the app but each slice still stands apart.
     private func color(_ index: Int) -> Color {
-        if index == 0 { return Theme.accent }
-        let others = Self.palette.filter { $0 != (Appearance.shared.accentHex ?? 0xFF7A4D) }
-        return Color(UIColor(hex: others[(index - 1) % others.count]))
+        var hue: CGFloat = 0, saturation: CGFloat = 0, brightness: CGFloat = 0, alpha: CGFloat = 0
+        guard UIColor(Theme.accent).getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha) else { return Theme.accent }
+        let steps = max(entries.count - 1, 1)
+        let t = CGFloat(index) / CGFloat(steps)
+        // Light and strong first, then darker and deeper.
+        return Color(hue: Double(hue),
+                     saturation: Double(min(1, saturation * (1.0 + 0.1 * t))),
+                     brightness: Double(brightness * (1.0 - 0.5 * t)))
     }
 
     var body: some View {

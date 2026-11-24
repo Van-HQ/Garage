@@ -4,18 +4,30 @@ struct MainTabView: View {
     @Environment(GarageStore.self) private var store
     @Environment(TripController.self) private var trips
     @Environment(\.scenePhase) private var scenePhase
+    @State private var selection: AppTab = .home
+    @State private var logPrefill: LogPrefill?
+
+    private enum AppTab: Hashable { case home, drive, care, manuals, log }
 
     var body: some View {
         Group {
             if !store.hasLoaded {
                 loadingOrError
             } else {
-                TabView {
-                    HomeView().tabItem { Label("Home", systemImage: "house") }
-                    DriveView().tabItem { Label("Drive", systemImage: "gauge.with.dots.needle.67percent") }
-                    CareView().tabItem { Label("Care", systemImage: "wrench.adjustable") }
-                    ManualsView().tabItem { Label("Manuals", systemImage: "book.closed") }
+                TabView(selection: $selection) {
+                    Tab("Home", systemImage: "house", value: AppTab.home) { HomeView() }
+                    Tab("Drive", systemImage: "gauge.with.dots.needle.67percent", value: AppTab.drive) { DriveView() }
+                    Tab("Care", systemImage: "wrench.adjustable", value: AppTab.care) { CareView() }
+                    Tab("Manuals", systemImage: "book.closed", value: AppTab.manuals) { ManualsView() }
+                    // Shows as its own round button beside the tab bar. It never opens a screen: it opens the log sheet.
+                    Tab("Log", systemImage: "plus", value: AppTab.log, role: .search) { Color.clear }
                 }
+                .onChange(of: selection) { previous, new in
+                    guard new == .log else { return }
+                    selection = previous
+                    logPrefill = LogPrefill(vehicleID: nil)
+                }
+                .sheet(item: $logPrefill) { LogEntryView(prefill: $0).appliesAppearance() }
             }
         }
         .task {
