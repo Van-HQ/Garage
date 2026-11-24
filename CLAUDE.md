@@ -32,4 +32,7 @@ Verified against the repo on 2026-11-15: table names, RLS, and storage paths mat
 ## Compact Instructions
 When compacting, keep: decisions and why, rules and preferences I stated, open items and anything waiting on me, the task in progress with files in flight, and failed attempts. Drop finished work already in git, anything already in CLAUDE.md or the Garage Tweaks doc, and long tool output.
 
+## Token count
+After each task, add only the new usage since the last update to "Tokens used" in the Garage Tweaks doc's update line. Weighted = input + 2 × cache write + 0.1 × cache read + 5 × output. Use `/cost` or `/usage` for the numbers, and say which basis you used.
+
 @AGENTS.md
