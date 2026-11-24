@@ -29,4 +29,7 @@ Verified against the repo on 2026-11-15: table names, RLS, and storage paths mat
 - Full rules live in memory (garage-tweaks-doc-rules).
 - If the Claude Docs or artifact tools aren't available in this session, say so. Don't guess at the doc's contents.
 
+## Compact Instructions
+When compacting, keep: decisions and why, rules and preferences I stated, open items and anything waiting on me, the task in progress with files in flight, and failed attempts. Drop finished work already in git, anything already in CLAUDE.md or the Garage Tweaks doc, and long tool output.
+
 @AGENTS.md
