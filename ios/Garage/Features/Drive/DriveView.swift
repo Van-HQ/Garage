@@ -58,6 +58,8 @@ struct DriveView: View {
                         tile("Long fuel trim", obd.value(.longTermFuelTrim), unit: "%", symbol: "plusminus", decimals: 1, signed: true)
                         tile("Fuel level", obd.value(.fuelLevel), unit: "%", symbol: "fuelpump")
                         tile("Battery", obd.value(.controlModuleVoltage), unit: "V", symbol: "minus.plus.batteryblock", decimals: 1)
+                        // Everything else the car answers for. Values it doesn't support never appear.
+                        extraTiles
                     }
                 }
                 .padding(.horizontal, 20)
@@ -66,6 +68,17 @@ struct DriveView: View {
             .background(Theme.background)
             .navigationTitle("Drive")
         }
+    }
+
+    @ViewBuilder
+    private var extraTiles: some View {
+        if let oil = obd.value(.engineOilTemperature) { tile("Oil temp", fahrenheit(oil), unit: "°F", symbol: "drop.degreesign") }
+        if let ambient = obd.value(.ambientAirTemperature) { tile("Outside air", fahrenheit(ambient), unit: "°F", symbol: "thermometer.sun") }
+        if let maf = obd.value(.massAirFlow) { tile("Air flow", maf, unit: "g/s", symbol: "wind", decimals: 1) }
+        if let map = obd.value(.intakeManifoldPressure) { tile("Manifold pressure", map * 0.145038, unit: "psi", symbol: "gauge.medium", decimals: 1) }
+        if let timing = obd.value(.timingAdvance) { tile("Timing advance", timing, unit: "°", symbol: "timer", decimals: 1, signed: true) }
+        if let baro = obd.value(.barometricPressure) { tile("Barometric", baro * 0.145038, unit: "psi", symbol: "barometer", decimals: 1) }
+        if let run = obd.value(.runTime) { tile("Engine run time", run / 60, unit: "min", symbol: "clock") }
     }
 
     private var tripPanel: some View {

@@ -59,6 +59,20 @@ public enum SimulatedDrive {
             return max(5, 62 - elapsed / 600)
         case .controlModuleVoltage:
             return 14.1 + 0.1 * sin(elapsed / 6)
+        case .intakeManifoldPressure:
+            return kmh < 1 ? 34 : min(95, max(20, 38 + kmh * 0.4 + accel * 6))
+        case .timingAdvance:
+            return 12 + 6 * sin(elapsed / 9)
+        case .massAirFlow:
+            return kmh < 1 ? 3.5 : min(60, max(2, 5 + kmh * 0.35 + accel * 2))
+        case .runTime:
+            return elapsed.rounded(.down)
+        case .barometricPressure:
+            return 101
+        case .ambientAirTemperature:
+            return 21
+        case .engineOilTemperature:
+            return min(95, 20 + elapsed * 0.2)
         }
     }
 

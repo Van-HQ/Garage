@@ -15,7 +15,6 @@ struct MainTabView: View {
                     DriveView().tabItem { Label("Drive", systemImage: "gauge.with.dots.needle.67percent") }
                     CareView().tabItem { Label("Care", systemImage: "wrench.adjustable") }
                     ManualsView().tabItem { Label("Manuals", systemImage: "book.closed") }
-                    SettingsView().tabItem { Label("Settings", systemImage: "gearshape") }
                 }
             }
         }

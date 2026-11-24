@@ -20,6 +20,7 @@ struct GarageApp: App {
                 }
             }
             .tint(Theme.accent)
+            .preferredColorScheme(Appearance.shared.mode.scheme)
         }
     }
 }

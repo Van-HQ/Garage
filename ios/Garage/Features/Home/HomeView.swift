@@ -7,6 +7,7 @@ struct HomeView: View {
     @State private var logPrefill: LogPrefill?
     @State private var detailItem: MaintenanceStatusItem?
     @State private var openedLog: MaintenanceLog?
+    @State private var showSettings = false
 
     private var vehicle: Vehicle? {
         store.vehicles.first { $0.id == selectedVehicleID } ?? store.vehicles.first
@@ -31,6 +32,10 @@ struct HomeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
+                    Button { showSettings = true } label: { Image(systemName: "gearshape") }
+                        .accessibilityLabel("Settings")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         logPrefill = LogPrefill(vehicleID: vehicle?.id)
                     } label: {
@@ -41,6 +46,7 @@ struct HomeView: View {
                 }
             }
             .refreshable { await store.refresh() }
+            .sheet(isPresented: $showSettings) { SettingsView() }
             .sheet(item: $logPrefill) { LogEntryView(prefill: $0) }
             .sheet(item: $detailItem) { item in
                 if let vehicle {

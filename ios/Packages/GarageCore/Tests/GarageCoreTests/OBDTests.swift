@@ -143,4 +143,12 @@ final class OBDTests: XCTestCase {
         let after = try await source.readTroubleCodes()
         XCTAssertEqual(after, [])
     }
+
+    func testExtraPIDsDecodeKnownValues() {
+        XCTAssertEqual(OBDPID.timingAdvance.decode([0x80]), 0)
+        XCTAssertEqual(OBDPID.massAirFlow.decode([0x01, 0x90]), 4.0)
+        XCTAssertEqual(OBDPID.engineOilTemperature.decode([0x82]), 90)
+        XCTAssertEqual(OBDPID.runTime.decode([0x01, 0x2C]), 300)
+        XCTAssertEqual(OBDPID.intakeManifoldPressure.decode([101]), 101)
+    }
 }
