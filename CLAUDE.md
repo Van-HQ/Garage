@@ -23,7 +23,7 @@ Verified against the repo on 2026-11-15: table names, RLS, and storage paths mat
 - Tweak list: Claude Doc "Garage Tweaks" (https://claude.ai/artifact/H7KC76c17EGpK8D5WgPNX6). Never recreate it.
 - Design canvas: "Garage Design" (https://claude.ai/artifact/3ZJBxuALy947Q1bvTKBu7W). Put UI mockups and other design work there, not in repo files.
 - Add each requested change under its area heading as `[ ]` open.
-- When you build something, mark it `[~]` with bold "Pending Test & Approval" and a yellow inline note (what was built, the commit, what is untested). Only I mark things done: once I say an item passed, delete its line and note. Never leave `[x]`.
+- When you build something, mark it `[~]` and add a yellow note as its own paragraph directly below the item: bold yellow "Pending Test & Approval.", then what was built, the commit, what is untested. Never put notes in the tweak's own line. Only I mark things done: once I say an item passed, delete its line and note. Never leave `[x]`.
 - `[?]` is for decisions: mock options in Garage Design first and wait for my pick.
 - Re-read the doc before every edit. Don't reword my items. Update the "Last updated · Tokens used · Check" line each edit.
 - Full rules live in memory (garage-tweaks-doc-rules).
