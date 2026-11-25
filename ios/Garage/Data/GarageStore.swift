@@ -65,7 +65,11 @@ final class GarageStore {
 
     // MARK: Derived data
 
-    var vehicles: [Vehicle] { snapshot.vehicles }
+    /// Buddy comes first everywhere, so it is the default pick on every screen; the rest keep their order.
+    var vehicles: [Vehicle] {
+        let isBuddy: (Vehicle) -> Bool = { $0.name.caseInsensitiveCompare("Buddy") == .orderedSame }
+        return snapshot.vehicles.filter(isBuddy) + snapshot.vehicles.filter { !isBuddy($0) }
+    }
 
     func types(for vehicle: Vehicle) -> [MaintenanceType] {
         snapshot.types.filter { $0.vehicleID == nil || $0.vehicleID == vehicle.id }

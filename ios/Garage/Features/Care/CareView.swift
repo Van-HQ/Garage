@@ -69,14 +69,14 @@ struct CareView: View {
     }
 
     private func summaryStat(_ count: Int, _ label: String, _ color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .center, spacing: 2) {
             Text("\(count)")
                 .font(.system(size: 32, weight: .bold))
                 .monospacedDigit()
                 .foregroundStyle(color)
             Text(label).font(.footnote).foregroundStyle(Theme.muted)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     @ViewBuilder
