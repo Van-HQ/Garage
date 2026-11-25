@@ -1,5 +1,6 @@
 import Foundation
 import GarageCore
+import UIKit
 
 #if DEBUG
 /// Sample data that lives in memory, for SwiftUI previews and `-demo` launches.
@@ -41,7 +42,24 @@ actor DemoBackend: GarageBackend {
 
     func photoURLs(for paths: [String]) async throws -> [String: URL] { [:] }
 
-    func manualURL(for vehicle: Vehicle) async throws -> URL { throw BackendError.noManual }
+    /// A small made-up manual, so zoom and search can be tried in demo mode.
+    func manualURL(for vehicle: Vehicle) async throws -> URL {
+        guard vehicle.manualUploadedAt != nil else { throw BackendError.noManual }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("demo-manual.pdf")
+        let page = CGRect(x: 0, y: 0, width: 612, height: 792)
+        let topics = ["Engine oil", "Tire pressure", "Brake fluid", "Coolant", "Battery", "Wiper blades", "Cabin air filter", "Towing"]
+        let data = UIGraphicsPDFRenderer(bounds: page).pdfData { context in
+            for number in 1...24 {
+                context.beginPage()
+                let topic = topics[(number - 1) % topics.count]
+                "Demo owner's manual · page \(number)".draw(at: CGPoint(x: 48, y: 48), withAttributes: [.font: UIFont.boldSystemFont(ofSize: 22)])
+                "\(topic): check it every 5,000 miles or 6 months. Replace the \(topic.lowercased()) if it looks worn.\n\nThis page is sample text for trying the zoom buttons and search."
+                    .draw(in: CGRect(x: 48, y: 96, width: 516, height: 600), withAttributes: [.font: UIFont.systemFont(ofSize: 15)])
+            }
+        }
+        try data.write(to: url)
+        return url
+    }
 
     func saveTrip(_ trip: RecordedTrip) async throws {
         trips.removeAll { $0.id == trip.id }
@@ -102,7 +120,7 @@ enum DemoData {
 
         let tacoma = Vehicle(
             id: id(1), userID: userID, name: "Buddy", make: "Toyota", model: "TRD Sport", year: 2024,
-            color: "#e6d3c1", icon: "truck", currentMileage: 11_400, mileageUpdatedAt: daysAgo(3),
+            color: "#e6d3c1", icon: "truck", currentMileage: 11_400, manualUploadedAt: daysAgo(30), mileageUpdatedAt: daysAgo(3),
             avgDailyMiles: 32, sortOrder: 0, createdAt: daysAgo(400)
         )
         let rav4 = Vehicle(
