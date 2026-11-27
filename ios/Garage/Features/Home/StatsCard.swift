@@ -80,7 +80,6 @@ struct StatsCard: View {
                     }
             }
         }
-        .animation(.snappy, value: selectedLabel)
         .chartYAxis(.hidden)
         .chartXAxis {
             AxisMarks { _ in AxisValueLabel().font(.system(size: 11)).foregroundStyle(Theme.muted) }

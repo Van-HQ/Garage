@@ -18,6 +18,7 @@ struct HomeView: View {
             ScrollView {
                 VStack(spacing: 28) {
                     pager
+                        .padding(.horizontal, -20)
                     if let vehicle {
                         maintenanceSection(vehicle)
                         StatsCard(vehicle: vehicle, points: store.trend(for: vehicle))
