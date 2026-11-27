@@ -57,7 +57,7 @@ struct QuickLogView: View {
                                     draft.typeID = type.id
                                 }
                             }
-                            ChoiceChip(title: "Mileage only", selected: draft.isMileageOnly, fills: true) { draft.isMileageOnly = true }
+                            ChoiceChip(title: "Mileage", selected: draft.isMileageOnly, fills: true) { draft.isMileageOnly = true }
                         }
                     }
 

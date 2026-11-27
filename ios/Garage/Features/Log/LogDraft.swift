@@ -44,7 +44,7 @@ final class LogDraft {
     func type(in store: GarageStore) -> MaintenanceType? { types(in: store).first { $0.id == typeID } }
 
     func title(in store: GarageStore) -> String {
-        isMileageOnly ? "Mileage only" : type(in: store)?.name ?? "Maintenance"
+        isMileageOnly ? "Mileage" : type(in: store)?.name ?? "Maintenance"
     }
 
     var canContinue: Bool { vehicleID != nil && mileageValue != nil }

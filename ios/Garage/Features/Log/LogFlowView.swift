@@ -99,7 +99,7 @@ struct LogFlowView: View {
                         draft.typeID = type.id
                     }
                 }
-                circleButton(title: "Mileage only", symbol: "gauge.with.dots.needle.67percent",
+                circleButton(title: "Mileage", symbol: "gauge.with.dots.needle.67percent",
                              selected: draft.isMileageOnly, ring: nil) {
                     draft.isMileageOnly = true
                 }
