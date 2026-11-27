@@ -56,6 +56,9 @@ protocol GarageBackend: Sendable {
     func logMileage(_ draft: MileageDraft) async throws
 
     /// Short-lived signed URLs for private maintenance photos, keyed by storage path.
+    /// Deletes a logged service. The database removes its photo rows and works the odometer out again.
+    func deleteMaintenanceLog(id: UUID, photoPaths: [String]) async throws
+
     func photoURLs(for paths: [String]) async throws -> [String: URL]
 
     /// Short-lived signed URL for a vehicle's owner's manual PDF.
@@ -92,11 +95,13 @@ protocol GarageBackend: Sendable {
 enum BackendError: LocalizedError {
     case notSignedIn
     case noManual
+    case nothingDeleted
 
     var errorDescription: String? {
         switch self {
         case .notSignedIn: "You're signed out. Please sign in again."
         case .noManual: "This vehicle has no owner's manual yet. Upload one from the web app."
+        case .nothingDeleted: "That entry couldn't be deleted. Pull to refresh and try again."
         }
     }
 }

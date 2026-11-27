@@ -94,3 +94,18 @@ public func computeMonthlyStats(
     }
     return Array(stats.suffix(limit).reversed())
 }
+
+/// The service points that get an icon on the Home chart: newest first, skipping any too close in time
+/// to one already picked (as a share of the whole chart), so icons never sit on top of each other.
+public func spacedServiceMarkers(_ points: [TrendPoint], minimumGap: Double = 0.1, limit: Int = 4) -> [TrendPoint] {
+    guard let first = points.map(\.date).min(), let last = points.map(\.date).max() else { return [] }
+    let span = max(last.timeIntervalSince(first), 1)
+    var picked: [TrendPoint] = []
+    for point in points.filter({ $0.kind == .maintenance }).sorted(by: { $0.date > $1.date }) {
+        guard picked.count < limit else { break }
+        if picked.allSatisfy({ abs($0.date.timeIntervalSince(point.date)) / span >= minimumGap }) {
+            picked.append(point)
+        }
+    }
+    return picked.reversed()
+}

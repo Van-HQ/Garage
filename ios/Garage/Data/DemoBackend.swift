@@ -40,6 +40,13 @@ actor DemoBackend: GarageBackend {
         recomputeMileage(for: draft.vehicleID)
     }
 
+    func deleteMaintenanceLog(id: UUID, photoPaths: [String]) async throws {
+        guard let log = snapshot.logs.first(where: { $0.id == id }) else { throw BackendError.nothingDeleted }
+        snapshot.logs.removeAll { $0.id == id }
+        snapshot.photos.removeAll { $0.maintenanceLogID == id }
+        recomputeMileage(for: log.vehicleID)
+    }
+
     func photoURLs(for paths: [String]) async throws -> [String: URL] { [:] }
 
     /// A small made-up manual, so zoom and search can be tried in demo mode.

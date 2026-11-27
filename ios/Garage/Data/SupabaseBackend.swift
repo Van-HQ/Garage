@@ -127,6 +127,18 @@ struct SupabaseBackend: GarageBackend {
             .execute()
     }
 
+    func deleteMaintenanceLog(id: UUID, photoPaths: [String]) async throws {
+        // Ask for the deleted row back, so "nothing was deleted" is an error instead of a silent success.
+        struct Deleted: Decodable { let id: UUID }
+        let deleted: [Deleted] = try await client.from("maintenance_logs")
+            .delete().eq("id", value: id).select("id").execute().value
+        guard !deleted.isEmpty else { throw BackendError.nothingDeleted }
+        // The entry is gone either way; a photo file left behind is harmless.
+        if !photoPaths.isEmpty {
+            _ = try? await client.storage.from("maintenance-photos").remove(paths: photoPaths)
+        }
+    }
+
     func photoURLs(for paths: [String]) async throws -> [String: URL] {
         guard !paths.isEmpty else { return [:] }
         let results = try await client.storage.from("maintenance-photos")

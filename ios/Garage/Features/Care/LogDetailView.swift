@@ -1,13 +1,16 @@
 import SwiftUI
 import GarageCore
 
-/// A logged service with its notes and photos. Read-only for now; editing lives on the web.
+/// A logged service with its notes and photos. It can be deleted here; editing lives on the web.
 struct LogDetailView: View {
     @Environment(GarageStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     let log: MaintenanceLog
 
     @State private var photoURLs: [String: URL] = [:]
+    @State private var confirmingDelete = false
+    @State private var isDeleting = false
+    @State private var deleteError: String?
 
     var body: some View {
         let photos = store.photos(for: log)
@@ -51,6 +54,22 @@ struct LogDetailView: View {
                             }
                         }
                     }
+
+                    Button(role: .destructive) { confirmingDelete = true } label: {
+                        Panel(padding: 16) {
+                            Group {
+                                if isDeleting { ProgressView() } else { Text("Delete entry").font(.system(size: 16, weight: .medium)) }
+                            }
+                            .foregroundStyle(Theme.statusOverdue)
+                            .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isDeleting)
+
+                    if let deleteError {
+                        Text(deleteError).font(.footnote).foregroundStyle(Theme.statusOverdue)
+                    }
                 }
                 .padding(20)
             }
@@ -62,9 +81,28 @@ struct LogDetailView: View {
                     Button("Done") { dismiss() }
                 }
             }
+            .confirmationDialog("Delete this entry?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+                Button("Delete \(log.title)", role: .destructive, action: delete)
+            } message: {
+                Text("\(log.performedAt.mediumDay) · \(log.mileageAt.grouped) mi. Its photos go too. This can't be undone.")
+            }
             .task(id: photos.map(\.storagePath)) {
                 guard !photos.isEmpty else { return }
                 photoURLs = (try? await store.backend.photoURLs(for: photos.map(\.storagePath))) ?? [:]
+            }
+        }
+    }
+
+    private func delete() {
+        isDeleting = true
+        deleteError = nil
+        Task {
+            do {
+                try await store.delete(log)
+                dismiss()
+            } catch {
+                deleteError = error.localizedDescription
+                isDeleting = false
             }
         }
     }

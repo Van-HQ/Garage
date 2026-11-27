@@ -6,7 +6,7 @@ import GarageCore
 struct QuickLogView: View {
     @Environment(GarageStore.self) private var store
     @Bindable var draft: LogDraft
-    let onStepByStep: () -> Void
+    @Binding var isQuick: Bool
     let onClose: () -> Void
 
     @State private var pickedItems: [PhotosPickerItem] = []
@@ -24,6 +24,10 @@ struct QuickLogView: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 16)
+
+            LogModeSwitch(isQuick: $isQuick)
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
@@ -83,11 +87,6 @@ struct QuickLogView: View {
                         ChoiceChip(title: "Add note", selected: false, fills: true) { showNote = true }
                     }
                     if !draft.isMileageOnly { PhotoRow(draft: draft, pickedItems: $pickedItems) }
-
-                    Button("Step by step instead", action: onStepByStep)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Theme.accent)
-                        .frame(maxWidth: .infinity, minHeight: 44)
 
                     if let error = draft.errorMessage {
                         Text(error).font(.footnote).foregroundStyle(Theme.statusOverdue)

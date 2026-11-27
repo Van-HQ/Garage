@@ -10,8 +10,8 @@ struct HeroChart: View {
 
     @State private var selectedDate: Date?
 
-    /// Only the latest few services get an icon, so they never pile on top of each other.
-    private var markers: [TrendPoint] { Array(points.filter { $0.kind == .maintenance }.suffix(4)) }
+    /// Only services far enough apart get an icon, so they never pile on top of each other.
+    private var markers: [TrendPoint] { spacedServiceMarkers(points) }
 
     private var selected: TrendPoint? {
         guard let selectedDate else { return nil }
@@ -46,9 +46,9 @@ struct HeroChart: View {
                     PointMark(x: .value("Date", point.date), y: .value("Miles", Double(point.mileage)))
                         .symbol {
                             Image(systemName: symbol(point.label))
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.system(size: 10, weight: .semibold))
                                 .foregroundStyle(Theme.foreground)
-                                .frame(width: 28, height: 28)
+                                .frame(width: 22, height: 22)
                                 .background(Theme.elevated, in: Circle())
                                 .overlay(Circle().strokeBorder(Theme.hairline))
                         }

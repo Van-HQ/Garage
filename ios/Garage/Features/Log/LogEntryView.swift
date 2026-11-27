@@ -17,9 +17,9 @@ struct LogEntryView: View {
             if draft.isSaved {
                 LoggedView(draft: draft) { dismiss() }
             } else if prefersQuick {
-                QuickLogView(draft: draft, onStepByStep: { prefersQuick = false }, onClose: { dismiss() })
+                QuickLogView(draft: draft, isQuick: $prefersQuick, onClose: { dismiss() })
             } else {
-                LogFlowView(draft: draft, onQuickLog: { prefersQuick = true }, onClose: { dismiss() })
+                LogFlowView(draft: draft, isQuick: $prefersQuick, onClose: { dismiss() })
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

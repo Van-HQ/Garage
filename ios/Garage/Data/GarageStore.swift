@@ -63,6 +63,11 @@ final class GarageStore {
         await refresh()
     }
 
+    func delete(_ log: MaintenanceLog) async throws {
+        try await backend.deleteMaintenanceLog(id: log.id, photoPaths: photos(for: log).map(\.storagePath))
+        await refresh()
+    }
+
     // MARK: Derived data
 
     /// Buddy comes first everywhere, so it is the default pick on every screen; the rest keep their order.

@@ -6,12 +6,15 @@ import GarageCore
 struct LogFlowView: View {
     @Environment(GarageStore.self) private var store
     @Bindable var draft: LogDraft
-    let onQuickLog: () -> Void
+    @Binding var isQuick: Bool
     let onClose: () -> Void
 
     @State private var step = 1
     @State private var pickedItems: [PhotosPickerItem] = []
     @State private var dragStart: Int?
+    /// The exact position while dragging, so the ticks glide instead of jumping a mile at a time.
+    @State private var dragValue: Double?
+    private static let pointsPerMile = 5.0
     @State private var didSkipFirstStep = false
     @FocusState private var typing: Bool
 
@@ -70,15 +73,7 @@ struct LogFlowView: View {
                 .accessibilityLabel("Step \(step) of \(lastStep)")
                 VehicleMenu(draft: draft)
             }
-            if step == 1 {
-                HStack {
-                    Spacer()
-                    Button("Quick log", action: onQuickLog)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Theme.accent)
-                        .frame(minHeight: 32)
-                }
-            }
+            if step == 1 { LogModeSwitch(isQuick: $isQuick) }
         }
         .padding(.horizontal, 20)
         .padding(.top, 16)
@@ -89,8 +84,10 @@ struct LogFlowView: View {
     private var whatStep: some View {
         let status = draft.vehicle(in: store).map { store.status(for: $0) } ?? []
         return VStack(alignment: .leading, spacing: 28) {
-            Text("What did\nyou do?")
-                .font(.system(size: 34, weight: .bold))
+            Text("What did you do?")
+                .font(.system(size: 32, weight: .bold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
                 .foregroundStyle(Theme.foreground)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .top), count: 3), spacing: 24) {
                 ForEach(draft.types(in: store)) { type in
@@ -182,29 +179,48 @@ struct LogFlowView: View {
         }
     }
 
-    /// Dragging left or right nudges the odometer, one mile for every few points.
+    /// The ticks slide under a fixed needle as you drag, one tick for every two miles.
     private var ruler: some View {
-        HStack(spacing: 8) {
-            ForEach(0..<31, id: \.self) { index in
-                Capsule()
-                    .fill(index == 15 ? Theme.accent : Theme.muted.opacity(index % 5 == 0 ? 0.7 : 0.35))
-                    .frame(width: index == 15 ? 3.5 : 2, height: index == 15 ? 44 : index % 5 == 0 ? 28 : 14)
+        let miles = dragValue ?? Double(draft.mileageValue ?? 0)
+        return Canvas { context, size in
+            let center = size.width / 2
+            let reach = Int(center / Self.pointsPerMile) + 2
+            let base = Int(miles.rounded(.down))
+            for mile in (base - reach)...(base + reach) where mile >= 0 && mile % 2 == 0 {
+                let x = center + (Double(mile) - miles) * Self.pointsPerMile
+                let major = mile % 10 == 0
+                let height: CGFloat = major ? 28 : 14
+                let tick = CGRect(x: x - 1, y: (size.height - height) / 2, width: 2, height: height)
+                context.fill(Path(roundedRect: tick, cornerRadius: 1), with: .color(Theme.muted.opacity(major ? 0.75 : 0.4)))
             }
         }
-        .frame(maxWidth: .infinity, minHeight: 56)
-        .clipped()
+        .mask(LinearGradient(stops: [
+            .init(color: .clear, location: 0), .init(color: .black, location: 0.22),
+            .init(color: .black, location: 0.78), .init(color: .clear, location: 1),
+        ], startPoint: .leading, endPoint: .trailing))
+        .overlay { Capsule().fill(Theme.accent).frame(width: 3.5, height: 44) }
+        .frame(maxWidth: .infinity)
+        .frame(height: 56)
         .contentShape(Rectangle())
-        .gesture(
+        // High priority, so the scrolling page can't take the drag away.
+        .highPriorityGesture(
             DragGesture(minimumDistance: 2)
                 .onChanged { value in
                     typing = false
                     let start = dragStart ?? draft.mileageValue ?? draft.vehicle(in: store).map { projectedMileage($0) } ?? 0
                     dragStart = start
-                    draft.mileage = String(max(0, start - Int(value.translation.width / 4)))
+                    let now = max(0, Double(start) - Double(value.translation.width) / Self.pointsPerMile)
+                    dragValue = now
+                    draft.mileage = String(Int(now.rounded()))
                 }
-                .onEnded { _ in dragStart = nil }
+                .onEnded { _ in
+                    dragStart = nil
+                    dragValue = nil
+                }
         )
+        .accessibilityElement()
         .accessibilityLabel("Adjust the odometer")
+        .accessibilityValue("\(draft.mileageValue ?? 0) miles")
         .accessibilityAdjustableAction { direction in
             let now = draft.mileageValue ?? 0
             draft.mileage = String(max(0, now + (direction == .increment ? 1 : -1)))

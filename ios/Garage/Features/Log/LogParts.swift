@@ -23,6 +23,19 @@ struct VehicleMenu: View {
     }
 }
 
+/// The same switch, in the same place, on both ways of adding an entry.
+struct LogModeSwitch: View {
+    @Binding var isQuick: Bool
+
+    var body: some View {
+        Picker("How to add", selection: $isQuick) {
+            Text("Step by step").tag(false)
+            Text("Quick log").tag(true)
+        }
+        .pickerStyle(.segmented)
+    }
+}
+
 struct ChoiceChip: View {
     let title: String
     let selected: Bool
