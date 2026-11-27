@@ -6,6 +6,8 @@ import GarageCore
 struct StatsCard: View {
     let vehicle: Vehicle
     let points: [TrendPoint]
+    /// The bar the user tapped. Nil shows the latest month.
+    @State private var selectedLabel: String?
 
     var body: some View {
         if let first = points.first, let last = points.last, points.count >= 2 {
@@ -40,7 +42,9 @@ struct StatsCard: View {
 
                         if !months.isEmpty {
                             chart(months)
-                            if let latest = months.first { latestLine(latest) }
+                            if let active = months.first(where: { $0.month.shortLabel == selectedLabel }) ?? months.first {
+                                monthLine(active)
+                            }
                         }
                     }
                 }
@@ -50,7 +54,7 @@ struct StatsCard: View {
 
     private func chart(_ months: [MonthlyStat]) -> some View {
         let ordered = Array(months.reversed())
-        let latestLabel = months.first?.month.shortLabel
+        let latestLabel = selectedLabel ?? months.first?.month.shortLabel
         return Chart(ordered, id: \.self) { stat in
             BarMark(x: .value("Month", stat.month.shortLabel), y: .value("Miles", stat.month.miles))
                 .cornerRadius(6)
@@ -62,6 +66,21 @@ struct StatsCard: View {
                         .foregroundStyle(stat.month.shortLabel == latestLabel ? Theme.foreground : Theme.muted)
                 }
         }
+        // A plain tap on a column picks that month and keeps it picked.
+        .chartOverlay { proxy in
+            GeometryReader { geometry in
+                Rectangle()
+                    .fill(.clear)
+                    .contentShape(Rectangle())
+                    .onTapGesture { location in
+                        guard let plot = proxy.plotFrame else { return }
+                        if let label: String = proxy.value(atX: location.x - geometry[plot].origin.x) {
+                            selectedLabel = label
+                        }
+                    }
+            }
+        }
+        .animation(.snappy, value: selectedLabel)
         .chartYAxis(.hidden)
         .chartXAxis {
             AxisMarks { _ in AxisValueLabel().font(.system(size: 11)).foregroundStyle(Theme.muted) }
@@ -69,10 +88,12 @@ struct StatsCard: View {
         .frame(height: 150)
     }
 
-    private func latestLine(_ stat: MonthlyStat) -> some View {
+    /// The month tapped in the chart (or the latest one): its miles and how it compares with the month before.
+    private func monthLine(_ stat: MonthlyStat) -> some View {
         HStack(spacing: 6) {
-            Text("\(stat.month.shortLabel) vs. last month")
-                .foregroundStyle(Theme.muted)
+            Text("\(stat.month.shortLabel) · \(stat.month.miles.grouped) mi")
+                .fontWeight(.semibold)
+                .foregroundStyle(Theme.foreground)
             Spacer()
             if let change = stat.changeMiles {
                 let color = change == 0 ? Theme.muted : change > 0 ? Theme.statusOK : Theme.statusOverdue
@@ -80,7 +101,7 @@ struct StatsCard: View {
                 Text("\(arrow) \(stat.changePercent.map { "\($0.signedGrouped)%" } ?? "—")")
                     .fontWeight(.semibold)
                     .foregroundStyle(color)
-                Text("(\(change.signedGrouped) mi)").foregroundStyle(Theme.muted)
+                Text("vs. last month (\(change.signedGrouped) mi)").foregroundStyle(Theme.muted)
             } else {
                 Text("—").foregroundStyle(Theme.muted)
             }
